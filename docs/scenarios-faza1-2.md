@@ -246,6 +246,30 @@ Testni podaci: prijenosi u testovima stvaraju stvarne privitke na testnim strani
 | P21 | Brojač učestalosti koji se ne može spremiti | zahtjev **prolazi nebrojen** (prihvatio vlasnik 15. 11. 2026.): kvar brojača ne smije srušiti sinkronizaciju |
 | P22 | Brisanje datoteka u kodu plugina | **jedino dopušteno** (prihvatio vlasnik 15. 11. 2026.): kad stvaranje privitka padne nakon premještanja, plugin uklanja svoju netom spremljenu datoteku; ništa postojeće se ne briše (H2.69) |
 
+## Provjera stanja prijenosa — `GET /media/uploads/<client_upload_id>` (`0.3.0`, odluke vlasnika 15. 11. 2026.)
+
+Odluke: zasebna putanja (opcija A); slika u smeću je 200 sa `state: "trashed"`; `sha256` je u odgovoru; skupna
+provjera i `PATCH /media/<id>` nisu dio 0.3.0; provjera se ne broji u 30 prijenosa.
+
+| ID | Scenarij | Očekivano |
+|---|---|---|
+| H2.71 | `/info` na 0.3.0 | `features` sadrži `media.upload_status`; `api_version` ostaje 1; putanja ne postoji bez WooCommercea i na multisiteu |
+| H2.72 | Slika prenesena kroz `POST /media`, zatim provjera istim `client_upload_id` (i velikim slovima) | 200, `state: "stored"`, `sha256` jednak sažetku datoteke, `item` jednak stavci iz `GET /media`; ID u odgovoru malim slovima; slika bez zabilježenog sažetka: `sha256` je `null` |
+| H2.73 | Slika s tim ID-jem je u smeću | 200, `state: "trashed"`, `sha256` postoji, `item` je `null` (ne 409) |
+| H2.74 | `POST` s tim ID-jem upravo traje (zaključavanje drži drugi zahtjev), s privitkom ili bez njega | 200, `state: "in_progress"`, `sha256` i `item` su `null`, zaglavlje `Retry-After: 5`; provjera ne čeka; nakon završetka `stored` |
+| H2.75 | Nepoznat ID; ID slike koja je trajno obrisana | 404 `bulkbird_upload_not_found` |
+| H2.76 | Dozvole i oblik ID-ja | bez prijave 401, bez obje sposobnosti 403 (i kad je ID neispravan); ključ samo za čitanje smije; ID koji nije UUID: 400 `rest_invalid_param`; druge metode ne postoje; nema `PATCH /media/<id>` |
+| H2.77 | Ograničenje učestalosti | provjera se broji kao zahtjev (120/min), ne kao prijenos (30/min) |
+| H2.78 | Provjera ništa ne mijenja | broj privitaka, `modified_gmt` i meta slike isti; jedini upis u bazu je brojač učestalosti |
+| H2.79 | Odgovori imaju oblik primjera u `fixtures/v1/media-upload-status-*.json` | integracijski test uspoređuje stvarni odgovor s primjerom |
+
+Namjerni kvarovi: H2.71 (značajka nije navedena), H2.73 (smeće kao spremljeno), H2.74 (traje kao spremljeno),
+H2.75 (stavka i za sliku u smeću), H2.76a (dovoljna jedna sposobnost), H2.76b (prima bilo kakav ID).
+
+Poznata praznina: testovi stvarnim HTTP-om za ovu putanju postoje, ali se izvode tek kad 0.3.0 bude na
+testnim stranicama (do tada se preskaču). Stanje `in_progress` stvarnim HTTP-om nije izvedivo pouzdano
+(traži zahtjev koji traje); pokriva ga integracijski test koji sam drži zaključavanje.
+
 ## Poznate praznine (stanje 15. 11. 2026.)
 
 | Scenarij | Što nije izvedeno | Razlog | Što ga ipak pokriva |

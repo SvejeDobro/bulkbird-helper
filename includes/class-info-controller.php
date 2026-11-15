@@ -28,7 +28,7 @@ final class Info_Controller {
 		$data = array(
 			'plugin_version'      => VERSION,
 			'api_version'         => API_VERSION,
-			'features'            => array( 'media.read', 'media.upload' ),
+			'features'            => array( 'media.read', 'media.upload', 'media.upload_status' ),
 			'wordpress_version'   => (string) get_bloginfo( 'version' ),
 			'woocommerce_version' => defined( 'WC_VERSION' ) ? (string) WC_VERSION : '',
 			'php_version'         => Environment::php_version(),

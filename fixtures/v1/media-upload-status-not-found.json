@@ -1,0 +1,10 @@
+{
+    "status": 404,
+    "body": {
+        "code": "bulkbird_upload_not_found",
+        "message": "No image with this upload id.",
+        "data": {
+            "status": 404
+        }
+    }
+}

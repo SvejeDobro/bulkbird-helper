@@ -1,0 +1,12 @@
+{
+    "status": 200,
+    "headers": {
+        "Retry-After": "5"
+    },
+    "body": {
+        "client_upload_id": "3f2b8c1e-9d4a-4b7e-8f1a-2c3d4e5f6a7b",
+        "state": "in_progress",
+        "sha256": null,
+        "item": null
+    }
+}

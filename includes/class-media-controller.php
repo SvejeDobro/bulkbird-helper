@@ -134,6 +134,43 @@ final class Media_Controller {
 	}
 
 	/**
+	 * GET /media/uploads/<client_upload_id>: what the shop knows about an upload, without sending the file again.
+	 *
+	 * Reads only. Never waits for a running upload.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function upload_status( \WP_REST_Request $request ) {
+		$upload_id = Media_Rules::normalize_upload_id( (string) $request->get_param( 'client_upload_id' ) );
+		$existing  = $this->find_by_upload_id( $upload_id );
+		$state     = Media_Rules::upload_state( $existing, $this->is_locked( $upload_id ) );
+
+		if ( 'missing' === $state ) {
+			return Media_Rules::error( 'bulkbird_upload_not_found', __( 'No image with this upload id.', 'bulkbird-helper' ), 404 );
+		}
+
+		$item = null;
+		if ( 'stored' === $state && null !== $existing ) {
+			$post = get_post( $existing['id'] );
+			if ( ! $post instanceof \WP_Post ) {
+				return Media_Rules::error( 'bulkbird_upload_not_found', __( 'No image with this upload id.', 'bulkbird-helper' ), 404 );
+			}
+			$item = Media_Library::item( $post );
+		}
+
+		$response = new \WP_REST_Response(
+			Media_Rules::upload_status_body( $upload_id, $state, null === $existing ? '' : $existing['sha256'], $item ),
+			200
+		);
+		if ( 'in_progress' === $state ) {
+			$response->header( 'Retry-After', '5' );
+		}
+
+		return $response;
+	}
+
+	/**
 	 * Content-Length declared by the client.
 	 *
 	 * @return int
@@ -359,6 +396,19 @@ final class Media_Controller {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Advisory lock; nothing to cache.
 		return '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $this->lock_name( $upload_id ), self::LOCK_WAIT_SECONDS ) );
+	}
+
+	/**
+	 * Whether an upload with this id is running right now. Does not wait and does not take the lock.
+	 *
+	 * @param string $upload_id Normalised client upload id.
+	 * @return bool
+	 */
+	private function is_locked( string $upload_id ): bool {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Advisory lock; nothing to cache.
+		return null !== $wpdb->get_var( $wpdb->prepare( 'SELECT IS_USED_LOCK(%s)', $this->lock_name( $upload_id ) ) );
 	}
 
 	/**

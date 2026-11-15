@@ -479,5 +479,205 @@ final class MediaIntegrationTest extends WP_UnitTestCase {
 		$foreign->set_body_params( array( 'status' => 'nije-status' ) );
 		$this->assertSame( 400, rest_do_request( $foreign )->get_status() );
 	}
+
+	// --- GET /media/uploads/<client_upload_id> (0.3.0; H2.71–H2.79) ------------------------------
+
+	private function upload_status( string $upload_id, string $method = 'GET' ): WP_REST_Response {
+		return rest_do_request( new WP_REST_Request( $method, '/bulkbird/v1/media/uploads/' . $upload_id ) );
+	}
+
+	/** @return array{status: int, headers?: array<string, string>, body: array<string, mixed>} */
+	private function fixture( string $name ): array {
+		return json_decode( (string) file_get_contents( dirname( __DIR__, 2 ) . '/fixtures/v1/' . $name ), true ); // phpcs:ignore
+	}
+
+	/** @return array<string, mixed> */
+	private function body( WP_REST_Response $response ): array {
+		return json_decode( (string) wp_json_encode( rest_get_server()->response_to_data( $response, false ) ), true );
+	}
+
+	private function uploaded_image( string $upload_id, string $sha256 = '' ): int {
+		$id = $this->image( 'prenesena slika' );
+		update_post_meta( $id, '_bulkbird_upload_id', $upload_id );
+		if ( '' !== $sha256 ) {
+			update_post_meta( $id, '_bulkbird_upload_sha256', $sha256 );
+		}
+		return $id;
+	}
+
+	public function test_h2_72_stored_upload(): void {
+		$this->skip_unless_supported();
+		$this->as_role( 'shop_manager' );
+		$upload_id = wp_generate_uuid4();
+		$sha256    = hash( 'sha256', 'sadržaj' );
+		$image     = $this->uploaded_image( $upload_id, $sha256 );
+		$this->image( 'druga slika, bez upload id' );
+
+		$response = $this->upload_status( $upload_id );
+		$body     = $this->body( $response );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( array( 'client_upload_id', 'state', 'sha256', 'item' ), array_keys( $body ) );
+		$this->assertSame( array( $upload_id, 'stored', $sha256 ), array( $body['client_upload_id'], $body['state'], $body['sha256'] ) );
+		$this->assertSame( $image, $body['item']['id'] );
+
+		// Stavka je ista kao u GET /media.
+		$listed = wp_list_filter( $this->media( array( 'per_page' => 100 ) )->get_data(), array( 'id' => $image ) );
+		$this->assertSame( array_values( $listed )[0], $body['item'] );
+
+		// Primjer odgovora ima isti oblik.
+		$fixture = $this->fixture( 'media-upload-status-stored.json' );
+		$this->assertSame( $fixture['status'], $response->get_status() );
+		$this->assertSame( array_keys( $fixture['body'] ), array_keys( $body ) );
+		$this->assertSame( array_keys( $fixture['body']['item'] ), array_keys( $body['item'] ) );
+		$this->assertSame( array_keys( $fixture['body']['item']['urls'] ), array_keys( $body['item']['urls'] ) );
+		$this->assertArrayNotHasKey( 'Retry-After', $response->get_headers() );
+
+		// H2.11: velika slova u adresi daju isti odgovor, s ID-jem malim slovima.
+		$upper = $this->body( $this->upload_status( strtoupper( $upload_id ) ) );
+		$this->assertSame( $body, $upper );
+
+		// Bez spremljenog sažetka: null.
+		$without = wp_generate_uuid4();
+		$this->uploaded_image( $without );
+		$this->assertNull( $this->body( $this->upload_status( $without ) )['sha256'] );
+	}
+
+	public function test_h2_73_trashed_upload_is_reported_not_refused(): void {
+		$this->skip_unless_supported();
+		global $wpdb;
+		$this->as_role( 'shop_manager' );
+		$upload_id = wp_generate_uuid4();
+		$sha256    = hash( 'sha256', 'u smeću' );
+		$image     = $this->uploaded_image( $upload_id, $sha256 );
+		$wpdb->update( $wpdb->posts, array( 'post_status' => 'trash' ), array( 'ID' => $image ) ); // phpcs:ignore
+		clean_post_cache( $image );
+
+		$response = $this->upload_status( $upload_id );
+		$fixture  = $this->fixture( 'media-upload-status-trashed.json' );
+		$expected = array_merge(
+			$fixture['body'],
+			array(
+				'client_upload_id' => $upload_id,
+				'sha256'           => $sha256,
+			)
+		);
+		$this->assertSame( 200, $response->get_status(), 'čitanje se ne odbija; 409 ostaje za POST' );
+		$this->assertSame( $expected, $this->body( $response ) );
+	}
+
+	public function test_h2_74_upload_in_progress(): void {
+		$this->skip_unless_supported();
+		global $wpdb;
+		$this->as_role( 'shop_manager' );
+		$upload_id = wp_generate_uuid4();
+
+		Bulkbird\Helper\load_media_classes();
+		$controller = new Bulkbird\Helper\Media_Controller();
+		$lock_name  = new ReflectionMethod( $controller, 'lock_name' );
+		$lock_name->setAccessible( true );
+		$name = $lock_name->invoke( $controller, $upload_id );
+		$this->assertSame( '1', (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $name ) ) );
+
+		try {
+			$fixture = $this->fixture( 'media-upload-status-in-progress.json' );
+			foreach ( array( 'bez privitka', 's privitkom koji već postoji' ) as $case ) {
+				$response = $this->upload_status( $upload_id );
+				$this->assertSame( 200, $response->get_status(), $case );
+				$this->assertSame( array_merge( $fixture['body'], array( 'client_upload_id' => $upload_id ) ), $this->body( $response ), $case );
+				$this->assertSame( $fixture['headers']['Retry-After'], $response->get_headers()['Retry-After'], $case );
+				// Drugi krug: privitak nastaje prije umanjenih slika, a zahtjev još traje.
+				$this->uploaded_image( $upload_id, hash( 'sha256', 'x' ) );
+			}
+		} finally {
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $name ) );
+		}
+		$this->assertSame( 'stored', $this->body( $this->upload_status( $upload_id ) )['state'], 'nakon završetka' );
+	}
+
+	public function test_h2_75_unknown_upload_id(): void {
+		$this->skip_unless_supported();
+		$this->as_role( 'shop_manager' );
+		$this->uploaded_image( wp_generate_uuid4(), hash( 'sha256', 'neka druga' ) );
+
+		$response = $this->upload_status( wp_generate_uuid4() );
+		$fixture  = $this->fixture( 'media-upload-status-not-found.json' );
+		$this->assertSame( $fixture['status'], $response->get_status() );
+		$this->assertSame( $fixture['body'], $this->body( $response ) );
+
+		// Trajno obrisana slika se više ne nalazi.
+		$upload_id = wp_generate_uuid4();
+		$image     = $this->uploaded_image( $upload_id, hash( 'sha256', 'obrisana' ) );
+		wp_delete_attachment( $image, true );
+		$this->assertSame( 404, $this->upload_status( $upload_id )->get_status() );
+	}
+
+	public function test_h2_76_permissions_and_malformed_ids(): void {
+		$this->skip_unless_supported();
+		$upload_id = wp_generate_uuid4();
+		$this->uploaded_image( $upload_id, hash( 'sha256', 'x' ) );
+
+		wp_set_current_user( 0 );
+		$this->assertSame( 401, $this->upload_status( $upload_id )->get_status() );
+		$this->assertSame( 401, $this->upload_status( 'abc' )->get_status(), '401 prije 400' );
+		foreach ( array( 'author', 'editor', 'customer', 'subscriber' ) as $role ) {
+			$this->as_role( $role );
+			$this->assertSame( 403, $this->upload_status( $upload_id )->get_status(), $role );
+			$this->assertSame( 403, $this->upload_status( 'abc' )->get_status(), $role );
+			$this->assertStringNotContainsString( 'sha256', (string) wp_json_encode( $this->body( $this->upload_status( $upload_id ) ) ), $role );
+		}
+
+		$this->as_role( 'shop_manager' );
+		foreach ( array( 'abc', '123', $upload_id . 'x', str_repeat( 'a', 36 ), "' OR 1=1 --" ) as $bad ) {
+			$response = $this->upload_status( rawurlencode( $bad ) );
+			$this->assertSame( 400, $response->get_status(), $bad );
+			$this->assertSame( 'rest_invalid_param', $response->get_data()['code'], $bad );
+		}
+		// Samo čitanje: druge metode na toj putanji ne postoje.
+		foreach ( array( 'POST', 'PUT', 'PATCH', 'DELETE' ) as $method ) {
+			$this->assertContains( $this->upload_status( $upload_id, $method )->get_status(), array( 404, 405 ), $method );
+		}
+		$this->assertArrayNotHasKey( '/bulkbird/v1/media/(?P<id>[\d]+)', rest_get_server()->get_routes(), 'PATCH /media/<id> ne postoji' );
+	}
+
+	public function test_h2_77_h2_78_status_reads_only_and_is_not_counted_as_an_upload(): void {
+		$this->skip_unless_supported();
+		global $wpdb;
+		$user      = $this->as_role( 'shop_manager' );
+		$upload_id = wp_generate_uuid4();
+		$image     = $this->uploaded_image( $upload_id, hash( 'sha256', 'x' ) );
+		$before    = array( $this->attachment_count(), get_post( $image )->post_modified_gmt, get_post_meta( $image ) );
+
+		$queries = array();
+		$record  = static function ( string $query ) use ( &$queries ): string {
+			$queries[] = $query;
+			return $query;
+		};
+		add_filter( 'query', $record );
+		for ( $i = 0; $i < 5; $i++ ) {
+			$this->assertSame( 200, $this->upload_status( $upload_id )->get_status() );
+		}
+		$this->assertSame( 404, $this->upload_status( wp_generate_uuid4() )->get_status() );
+		remove_filter( 'query', $record );
+
+		$writes = preg_grep( '/^\s*(INSERT|UPDATE|DELETE|REPLACE|ALTER|DROP|CREATE)\b/i', $queries );
+		$this->assertSame( array(), array_values( preg_grep( '/bulkbird_rate/', $writes, PREG_GREP_INVERT ) ), 'jedini upis je brojač učestalosti' );
+
+		clean_post_cache( $image );
+		$this->assertSame( $before, array( $this->attachment_count(), get_post( $image )->post_modified_gmt, get_post_meta( $image ) ) );
+
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT hits, upload_hits FROM {$wpdb->prefix}bulkbird_rate WHERE user_id = %d", $user ), ARRAY_A ); // phpcs:ignore
+		$this->assertSame( array( '6', '0' ), array( (string) $row['hits'], (string) $row['upload_hits'] ), 'broji se u zahtjeve, ne u prijenose' );
+	}
+
+	public function test_h2_71_h2_79_discovery_and_absence_elsewhere(): void {
+		$routes = rest_get_server()->get_routes();
+		$this->assertSame( $this->supported(), isset( $routes['/bulkbird/v1/media/uploads/(?P<client_upload_id>[^/]+)'] ) );
+		if ( $this->supported() ) {
+			$this->as_role( 'shop_manager' );
+			$info = rest_do_request( new WP_REST_Request( 'GET', '/bulkbird/v1/info' ) )->get_data();
+			$this->assertContains( 'media.upload_status', $info['features'] );
+			$this->assertSame( 1, $info['api_version'] );
+		}
+	}
 }
 

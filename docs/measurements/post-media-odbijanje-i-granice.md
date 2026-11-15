@@ -1,6 +1,6 @@
 # `POST /media`: kad stiže odbijanje i koja je stvarna granica veličine
 
-16. 11. 2026. · teststore1.bulkbird.app · plugin `0.2.0` · pitanja Bulkbird strane za paket 2b (slike).
+15. 11. 2026. · teststore1.bulkbird.app · plugin `0.2.0` · pitanja Bulkbird strane za paket 2b (slike).
 Ugovor (`docs/api-v1.md`) nije mijenjan. Na trgovini nije ništa mijenjano; poslano je 12 malih zahtjeva
 (najviše 300 kB), svi odbijeni, bez ijedne spremljene slike. Prevelike datoteke nisu slane.
 

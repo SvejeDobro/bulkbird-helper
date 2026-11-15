@@ -555,5 +555,73 @@ final class MediaTest extends TestCase {
 		Bulkbird\Helper\register_rest_routes();
 		self::assertContains( array( 'rest_request_before_callbacks', 'Bulkbird\Helper\auth_errors_first', 10, 3 ), BBH_State::$hooks );
 	}
-}
 
+	// --- Stanje prijenosa (0.3.0; H2.71–H2.79) ---------------------------------------------------
+
+	public function test_h2_72_h2_75_state_of_an_upload(): void {
+		self::assertSame( 'missing', Media_Rules::upload_state( null, false ) );
+		self::assertSame( 'stored', Media_Rules::upload_state( array( 'status' => 'inherit' ), false ) );
+		self::assertSame( 'stored', Media_Rules::upload_state( array( 'status' => 'private' ), false ) );
+		self::assertSame( 'trashed', Media_Rules::upload_state( array( 'status' => 'trash' ), false ) );
+		// Zahtjev koji još traje ima prednost: privitak postoji prije nego što su umanjene slike gotove.
+		self::assertSame( 'in_progress', Media_Rules::upload_state( null, true ) );
+		self::assertSame( 'in_progress', Media_Rules::upload_state( array( 'status' => 'inherit' ), true ) );
+		self::assertSame( 'in_progress', Media_Rules::upload_state( array( 'status' => 'trash' ), true ) );
+	}
+
+	public function test_h2_72_h2_75_body_of_the_status_response(): void {
+		$id   = '3f2b8c1e-9d4a-4b7e-8f1a-2c3d4e5f6a7b';
+		$sha  = str_repeat( 'a', 64 );
+		$item = array( 'id' => 5, 'title' => 'x' );
+
+		$stored = Media_Rules::upload_status_body( $id, 'stored', $sha, $item );
+		self::assertSame( array( 'client_upload_id', 'state', 'sha256', 'item' ), array_keys( $stored ) );
+		self::assertSame( array( $id, 'stored', $sha, $item ), array_values( $stored ) );
+
+		// U smeću: sažetak da, stavka ne.
+		self::assertSame( array( $id, 'trashed', $sha, null ), array_values( Media_Rules::upload_status_body( $id, 'trashed', $sha, $item ) ) );
+		// Traje: ni sažetak ni stavka, čak i ako privitak već postoji.
+		self::assertSame( array( $id, 'in_progress', null, null ), array_values( Media_Rules::upload_status_body( $id, 'in_progress', $sha, $item ) ) );
+		// Slika bez spremljenog ili s neispravnim sažetkom: null, nikad prazan ili tuđi tekst.
+		self::assertNull( Media_Rules::upload_status_body( $id, 'stored', '', $item )['sha256'] );
+		self::assertNull( Media_Rules::upload_status_body( $id, 'stored', '/home/shop/x', $item )['sha256'] );
+	}
+
+	public function test_h2_71_h2_76_status_route_is_read_only_and_needs_both_capabilities(): void {
+		Bulkbird\Helper\register_rest_routes();
+		list( , $route, $handlers ) = BBH_State::$routes[2];
+		self::assertSame( '/media/uploads/(?P<client_upload_id>[^/]+)', $route );
+		self::assertCount( 1, $handlers, 'samo GET' );
+		self::assertSame( 'GET', $handlers[0]['methods'] );
+		self::assertSame( 'Bulkbird\Helper\rest_can_read_media', $handlers[0]['permission_callback'] );
+		self::assertCount( 3, BBH_State::$routes, 'nema drugih novih putanja (npr. PATCH /media/<id>)' );
+
+		$arg = $handlers[0]['args']['client_upload_id'];
+		self::assertTrue( $arg['required'] );
+		self::assertSame( BBH_State::$routes[1][2][1]['args']['client_upload_id']['pattern'], $arg['pattern'], 'isto pravilo kao u POST /media' );
+		self::assertSame( 1, preg_match( '/' . $arg['pattern'] . '/', '3F2B8C1E-9D4A-4B7E-8F1A-2C3D4E5F6A7B' ) );
+		self::assertSame( 0, preg_match( '/' . $arg['pattern'] . '/', 'abc' ) );
+
+		// Putanja hvata bilo koji jedan dio adrese, da neispravan ID dobije 400, a ne "nema putanje".
+		self::assertSame( 1, preg_match( '#^/bulkbird/v1' . $route . '$#', '/bulkbird/v1/media/uploads/abc' ) );
+		self::assertSame( 0, preg_match( '#^/bulkbird/v1' . $route . '$#', '/bulkbird/v1/media/uploads/a/b' ) );
+	}
+
+	public function test_h2_77_status_request_counts_as_a_request_but_not_as_an_upload(): void {
+		Bulkbird\Helper\register_rest_routes();
+		$handler                  = BBH_State::$routes[2][2][0];
+		BBH_State::$logged_in     = true;
+		BBH_Media_State::$user_id = 7;
+		BBH_State::$caps          = array( 'upload_files', 'manage_woocommerce' );
+
+		$request = new WP_REST_Request( 'GET', '/bulkbird/v1/media/uploads/3f2b8c1e-9d4a-4b7e-8f1a-2c3d4e5f6a7b' );
+		self::assertTrue( call_user_func( $handler['permission_callback'], $request ) );
+		self::assertSame( 1, $GLOBALS['wpdb']->rows[7]['hits'] );
+		self::assertSame( 0, $GLOBALS['wpdb']->rows[7]['upload_hits'], 'provjera stanja se ne broji u 30 prijenosa' );
+
+		BBH_State::$caps = array( 'upload_files' );
+		self::assertSame( 'bulkbird_forbidden', call_user_func( $handler['permission_callback'], new WP_REST_Request( 'GET', '/bulkbird/v1/media/uploads/x' ) )->get_error_code() );
+		BBH_State::$logged_in = false;
+		self::assertSame( 'bulkbird_unauthorized', call_user_func( $handler['permission_callback'], new WP_REST_Request( 'GET', '/bulkbird/v1/media/uploads/x' ) )->get_error_code() );
+	}
+}
