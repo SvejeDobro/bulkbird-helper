@@ -1,0 +1,20 @@
+{
+    "status": 400,
+    "body": {
+        "code": "rest_invalid_param",
+        "message": "Invalid parameter(s): client_upload_id",
+        "data": {
+            "status": 400,
+            "params": {
+                "client_upload_id": "client_upload_id does not match pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$."
+            },
+            "details": {
+                "client_upload_id": {
+                    "code": "rest_invalid_pattern",
+                    "message": "client_upload_id does not match pattern ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$.",
+                    "data": null
+                }
+            }
+        }
+    }
+}

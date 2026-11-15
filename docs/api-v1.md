@@ -103,7 +103,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 {
     "plugin_version": "0.3.0",
     "api_version": 1,
-    "features": ["media.read", "media.upload"],
+    "features": ["media.read", "media.upload", "media.upload_status"],
     "wordpress_version": "7.1.4",
     "woocommerce_version": "11.3.0",
     "php_version": "8.3.36",
@@ -300,8 +300,10 @@ pa dok zahtjev traje odgovor nije `stored`.
 404 `bulkbird_upload_not_found` znači da će `POST /media` s tim `client_upload_id` stvoriti sliku.
 Klijent razlikuje dva moguća 404 po polju `code`.
 
-Primjeri odgovora: `fixtures/v1/media-upload-status-stored.json`, `-trashed.json`, `-in-progress.json`,
-`-not-found.json`.
+Primjeri odgovora u `fixtures/v1/`: `media-upload-status-stored.json`, `-trashed.json`, `-not-found.json`,
+`-invalid-id.json`, `-unauthorized.json`, `-forbidden.json` su stvarni odgovori snimljeni 15. 11. 2026. na
+teststore1 s `0.3.0`. `-in-progress.json` je sastavljen ručno (stanje traje samo dok traje zahtjev `POST`), a
+njegov oblik potvrđuje integracijski test.
 
 Nije dio `0.3.0` (odluke vlasnika 15. 11. 2026.): skupna provjera više ID-jeva odjednom i izmjena naslova ili
 alternativnog teksta (`PATCH /media/<id>`); opisane su samo u `docs/proposals/0.3.0-client-upload-id.md`.

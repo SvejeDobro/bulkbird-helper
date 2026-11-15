@@ -1,0 +1,10 @@
+{
+    "status": 403,
+    "body": {
+        "code": "bulkbird_forbidden",
+        "message": "You are not allowed to use this endpoint.",
+        "data": {
+            "status": 403
+        }
+    }
+}
