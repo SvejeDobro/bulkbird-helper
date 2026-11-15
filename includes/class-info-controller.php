@@ -28,7 +28,7 @@ final class Info_Controller {
 		$data = array(
 			'plugin_version'      => VERSION,
 			'api_version'         => API_VERSION,
-			'features'            => array(),
+			'features'            => array( 'media.read', 'media.upload' ),
 			'wordpress_version'   => (string) get_bloginfo( 'version' ),
 			'woocommerce_version' => defined( 'WC_VERSION' ) ? (string) WC_VERSION : '',
 			'php_version'         => Environment::php_version(),
@@ -40,6 +40,10 @@ final class Info_Controller {
 			'max_execution_time'  => (int) ini_get( 'max_execution_time' ),
 			'detected_plugins'    => Environment::detected_plugins(),
 			'analytics_lookup'    => Environment::analytics_lookup_state(),
+			'media'               => array(
+				'upload_mime_types' => Media_Rules::upload_mime_types(),
+				'upload_max_bytes'  => Media_Rules::upload_max_bytes(),
+			),
 		);
 
 		return new \WP_REST_Response( $data, 200 );
@@ -90,6 +94,20 @@ final class Info_Controller {
 				'analytics_lookup'    => array(
 					'type' => 'string',
 					'enum' => array( 'complete', 'importing', 'unknown' ),
+				),
+				'media'               => array(
+					'type'       => 'object',
+					'properties' => array(
+						'upload_mime_types' => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
+							'description' => 'Image types POST /media accepts on this shop.',
+						),
+						'upload_max_bytes'  => array(
+							'type'        => 'integer',
+							'description' => 'Largest file POST /media accepts, in bytes.',
+						),
+					),
 				),
 			),
 		);

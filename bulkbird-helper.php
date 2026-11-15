@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.1.0-rc.2
+ * Version:              0.2.0-rc.1
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.1.0-rc.2';
+const VERSION           = '0.2.0-rc.1';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -152,8 +152,8 @@ function register_rest_routes(): void {
 		return;
 	}
 
-	// Only names are registered here. The classes behind them are loaded when one of
-	// these callbacks actually runs, so REST requests for other routes load nothing more.
+	// Only names and plain data are registered here. The classes behind the routes are loaded
+	// when one of these callbacks actually runs, so REST requests for other routes load nothing more.
 	register_rest_route(
 		REST_NAMESPACE,
 		'/info',
@@ -168,7 +168,77 @@ function register_rest_routes(): void {
 		)
 	);
 
-	add_filter( 'rest_post_dispatch', __NAMESPACE__ . '\\forbid_caching_of_own_responses', 10, 3 );
+	register_rest_route(
+		REST_NAMESPACE,
+		'/media',
+		array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => __NAMESPACE__ . '\\rest_list_media',
+				'permission_callback' => __NAMESPACE__ . '\\rest_can_read_media',
+				'args'                => array(
+					'page'           => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
+						'validate_callback' => 'rest_validate_request_arg',
+						'sanitize_callback' => 'rest_sanitize_request_arg',
+					),
+					'per_page'       => array(
+						'type'              => 'integer',
+						'default'           => 50,
+						'minimum'           => 1,
+						'maximum'           => 100,
+						'validate_callback' => 'rest_validate_request_arg',
+						'sanitize_callback' => 'rest_sanitize_request_arg',
+					),
+					'search'         => array(
+						'type'              => 'string',
+						'default'           => '',
+						'maxLength'         => 200,
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+					'modified_after' => array(
+						'type'              => 'string',
+						'format'            => 'date-time',
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+					'orderby'        => array(
+						'type'              => 'string',
+						'default'           => 'date',
+						'enum'              => array( 'date', 'title' ),
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+				),
+			),
+			array(
+				'methods'             => 'POST',
+				'callback'            => __NAMESPACE__ . '\\rest_upload_media',
+				'permission_callback' => __NAMESPACE__ . '\\rest_can_upload_media',
+				'args'                => array(
+					// Required, but checked in the callback: a body larger than PHP accepts arrives with
+					// no fields at all and must be answered with 413, not with "missing parameter".
+					'client_upload_id' => array(
+						'type'              => 'string',
+						'format'            => 'uuid',
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+					'title'            => array(
+						'type'              => 'string',
+						'maxLength'         => 255,
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+					'alt'              => array(
+						'type'              => 'string',
+						'maxLength'         => 1000,
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+				),
+			),
+		)
+	);
+
+	add_filter( 'rest_post_dispatch', __NAMESPACE__ . '\\finish_own_responses', 10, 3 );
 }
 add_action( 'rest_api_init', __NAMESPACE__ . '\\register_rest_routes' );
 
@@ -179,8 +249,39 @@ add_action( 'rest_api_init', __NAMESPACE__ . '\\register_rest_routes' );
  */
 function load_rest_classes(): void {
 	require_once __DIR__ . '/includes/class-permissions.php';
+	require_once __DIR__ . '/includes/class-rate-limiter.php';
+	require_once __DIR__ . '/includes/class-media-rules.php';
 	require_once __DIR__ . '/includes/class-environment.php';
 	require_once __DIR__ . '/includes/class-info-controller.php';
+}
+
+/**
+ * Loads the classes behind the media routes.
+ *
+ * @return void
+ */
+function load_media_classes(): void {
+	load_rest_classes();
+	require_once __DIR__ . '/includes/class-media-library.php';
+	require_once __DIR__ . '/includes/class-media-controller.php';
+}
+
+/**
+ * Shared gate of every route: capabilities first, then the per-user rate limit.
+ *
+ * @param string[] $capabilities Capabilities the user must have (all of them).
+ * @param bool     $is_upload    Whether the request counts as an upload.
+ * @return true|\WP_Error
+ */
+function rest_guard( array $capabilities, bool $is_upload ) {
+	load_rest_classes();
+
+	$allowed = Permissions::require_capabilities( $capabilities );
+	if ( true !== $allowed ) {
+		return $allowed;
+	}
+
+	return Rate_Limiter::check( get_current_user_id(), $is_upload );
 }
 
 /**
@@ -189,9 +290,25 @@ function load_rest_classes(): void {
  * @return true|\WP_Error
  */
 function rest_can_get_info() {
-	load_rest_classes();
+	return rest_guard( array( 'manage_woocommerce' ), false );
+}
 
-	return Permissions::require_capability( 'manage_woocommerce' );
+/**
+ * Permission callback of GET /media.
+ *
+ * @return true|\WP_Error
+ */
+function rest_can_read_media() {
+	return rest_guard( array( 'upload_files', 'manage_woocommerce' ), false );
+}
+
+/**
+ * Permission callback of POST /media.
+ *
+ * @return true|\WP_Error
+ */
+function rest_can_upload_media() {
+	return rest_guard( array( 'upload_files', 'manage_woocommerce' ), true );
 }
 
 /**
@@ -217,16 +334,46 @@ function rest_get_info_schema(): array {
 }
 
 /**
- * Marks every response of this plugin's routes (errors included) as not cacheable.
+ * Callback of GET /media.
+ *
+ * @param \WP_REST_Request $request Request.
+ * @return \WP_REST_Response|\WP_Error
+ */
+function rest_list_media( \WP_REST_Request $request ) {
+	load_media_classes();
+
+	return ( new Media_Controller() )->list_items( $request );
+}
+
+/**
+ * Callback of POST /media.
+ *
+ * @param \WP_REST_Request $request Request.
+ * @return \WP_REST_Response|\WP_Error
+ */
+function rest_upload_media( \WP_REST_Request $request ) {
+	load_media_classes();
+
+	return ( new Media_Controller() )->upload( $request );
+}
+
+/**
+ * Marks every response of this plugin's routes (errors included) as not cacheable
+ * and turns a "retry_after" in an error into the Retry-After header.
  *
  * @param mixed $response Response object.
  * @param mixed $server   REST server.
  * @param mixed $request  Request object.
  * @return mixed
  */
-function forbid_caching_of_own_responses( $response, $server, $request ) {
+function finish_own_responses( $response, $server, $request ) {
 	if ( $response instanceof \WP_HTTP_Response && $request instanceof \WP_REST_Request && is_own_route( $request->get_route() ) ) {
 		$response->header( 'Cache-Control', 'no-store, private, max-age=0' );
+
+		$data = $response->get_data();
+		if ( is_array( $data ) && isset( $data['data']['retry_after'] ) && is_numeric( $data['data']['retry_after'] ) ) {
+			$response->header( 'Retry-After', (string) (int) $data['data']['retry_after'] );
+		}
 	}
 
 	return $response;
