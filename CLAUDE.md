@@ -22,11 +22,22 @@ smiju biti u `~/.config/bulkbird-helper/test.env` (dozvole 600, izvan repozitori
 ispunjava skripta bez ispisa ili vlasnik. Nikad ključ stvarnog korisnika ili produkcije. Ako ključ
 dospije u log, razgovor ili repozitorij: odmah ga opozvati, stvoriti novi i javiti vlasniku.
 
+## Brisanje testnih slika (trajno odobrenje vlasnika, 15. 11. 2026., odluka P17)
+
+Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
+
+- samo privitci kojima **naslov počinje s `bbh-test-`** I koji imaju meta **`_bulkbird_upload_id`** (oba uvjeta);
+- samo na **teststore1** i **teststoreold**;
+- samo kroz **WP-CLI** (`tests/tools/cleanup-test-media.php`);
+- **prije brisanja ispisati broj i ID-jeve**.
+
+Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizvodi, ni narudžbe, ni datoteke.
+
 ## Stanje
 
-Faza 0: scenariji su prihvaćeni (`docs/scenarios-faza0.md`, odluke u poglavlju 11). **Izvedba počinje tek
-na poziv vlasnika.** Do tada: ne stvarati korisnike ni ključeve, ne instalirati alate, ne pisati kod,
-ne mijenjati trgovinu.
+Faza 0 je izvedena i prihvaćena (`0.1.0`). Faze 1 i 2 (`GET` i `POST /media`, verzija `0.2.0`): scenariji su
+prihvaćeni (`docs/scenarios-faza1-2.md`), izvedba je na grani `paket-0.2.0`. Aktivaciju plugina i mjerni
+mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 
 ## Gdje je što
 

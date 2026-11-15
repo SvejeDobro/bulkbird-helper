@@ -1,6 +1,6 @@
 # Bulkbird Helper — specifikacija v1
 
-Verzija dokumenta: 1.1 (15. 11. 2026.; usklađeno s docs/api-v1.md u poglavljima 2 i 3.1) · Status: na potvrdu
+Verzija dokumenta: 1.2 (15. 11. 2026.; usklađeno s docs/api-v1.md u poglavljima 2 i 3.1; sposobnosti u 3.2 i 3.3) · Status: na potvrdu
 Odluke: zaseban repozitorij, WP 6.4+ / WC 8.0+ / PHP 8.1+, prva verzija = čitanje + prijenos slika.
 
 ## 1. Svrha i načela
@@ -67,7 +67,7 @@ Ne vraća: putanje na disku, tajne, korisnike, ništa iz wp-config.php.
 
 ### 3.2 `GET /bulkbird/v1/media`
 
-Sposobnost: `upload_files`.
+Sposobnosti: `upload_files` i `manage_woocommerce` (obje; odluka vlasnika 15. 11. 2026.).
 
 Parametri: `page`, `per_page` (1–100, zadano 50), `search` (naziv i ime datoteke), `modified_after` (GMT), `orderby` = `date` (zadano, najnovije prvo) ili `title`.
 
@@ -77,7 +77,7 @@ Stavka: `id`, `title`, `alt`, `filename`, `mime`, `width`, `height`, `filesize`,
 
 ### 3.3 `POST /bulkbird/v1/media`
 
-Sposobnost: `upload_files`; ključ mora imati dozvolu write.
+Sposobnosti: `upload_files` i `manage_woocommerce` (obje; odluka vlasnika 15. 11. 2026.); ključ mora imati dozvolu write.
 
 Tijelo: `multipart/form-data` s jednom datotekom; neobavezno `title`, `alt`; **obavezno `client_upload_id`** (UUID koji generira Bulkbird).
 
