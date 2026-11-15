@@ -48,8 +48,9 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizv
 ## Stanje
 
 Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`: `GET` i `POST /media`, ograničenje učestalosti) su izvedene i na
-grani `main` (oznake `v0.1.0`, `v0.2.0`). `0.2.0` je aktivan na obje testne stranice. Faze 3 i 4 se ne
-počinju dok vlasnik ne odluči. Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno,
+grani `main` (oznake `v0.1.0`, `v0.2.0`). `0.2.0` je aktivan na obje testne stranice. **Plugin miruje** (odluka vlasnika
+16. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik ne odluči. Bulkbird program koristi `0.2.0` prema
+konačnom ugovoru `docs/api-v1.md`; ugovor se mijenja samo uz odobrenje vlasnika. Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno,
 svaki put i za svaku stranicu.
 
 ## Gdje je što
@@ -73,6 +74,20 @@ svaki put i za svaku stranicu.
 - Najniže verzije: WordPress 6.4, WooCommerce 8.0, PHP 8.1. Kod ne smije koristiti ništa novije.
 - Identitet: slug `bulkbird-helper`, namespace `Bulkbird\Helper`, REST `bulkbird/v1`, SemVer, GPLv2+.
 - Commit poruke kratke, na hrvatskom ili engleskom; bez tajni i bez osobnih podataka.
+
+## Koraci koji mogu pasti (pravilo vlasnika, 16. 11. 2026.)
+
+Testovi, provjere i izrada **nikad se ne ulančavaju tako da sljedeći korak ide i nakon greške**:
+
+- koristiti `set -e` (uz `set -o pipefail` kad je u lancu cijev) ili `&&`, ili zasebne pozive s provjerom
+  izlaznog koda;
+- izlaz testa se ne provlači kroz `| tail` ili `| grep` ispred `&&`: tada vrijedi izlazni kod zadnje naredbe
+  u cijevi, a ne testa;
+- **oznaka i push nikad ne idu prije nego što su testovi stvarno prošli.**
+
+Primjer greške: oznaka `v0.1.0` od 15. 11. 2026. Naredba `phpunit … | tail -2 && git commit … && git tag …
+&& git push` poslala je oznaku iako je phpunit javio 42 greške (kriva naredba, bez bootstrapa). Testovi su
+prošli tek naknadno.
 
 ## Čvrsta načela plugina (specifikacija, poglavlje 1)
 
