@@ -2,6 +2,9 @@
 /**
  * GET /bulkbird/v1/info
  *
+ * The route itself is registered in bulkbird-helper.php; this class is loaded
+ * only when the route is actually called.
+ *
  * @package Bulkbird\Helper
  */
 
@@ -15,36 +18,6 @@ defined( 'ABSPATH' ) || exit;
  * Describes the plugin and the shop environment to Bulkbird.
  */
 final class Info_Controller {
-
-	/**
-	 * Registers the route.
-	 *
-	 * @return void
-	 */
-	public function register_routes(): void {
-		register_rest_route(
-			REST_NAMESPACE,
-			'/info',
-			array(
-				array(
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_info' ),
-					'permission_callback' => array( $this, 'check_permission' ),
-					'args'                => array(),
-				),
-				'schema' => array( $this, 'get_schema' ),
-			)
-		);
-	}
-
-	/**
-	 * Only shop managers and administrators.
-	 *
-	 * @return true|\WP_Error
-	 */
-	public function check_permission() {
-		return Permissions::require_capability( 'manage_woocommerce' );
-	}
 
 	/**
 	 * Builds the response. Contains no paths, secrets, users or customer data.

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.1.0-rc.1
+ * Version:              0.1.0-rc.2
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.1.0-rc.1';
+const VERSION           = '0.1.0-rc.2';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -152,15 +152,69 @@ function register_rest_routes(): void {
 		return;
 	}
 
-	require_once __DIR__ . '/includes/class-permissions.php';
-	require_once __DIR__ . '/includes/class-environment.php';
-	require_once __DIR__ . '/includes/class-info-controller.php';
-
-	( new Info_Controller() )->register_routes();
+	// Only names are registered here. The classes behind them are loaded when one of
+	// these callbacks actually runs, so REST requests for other routes load nothing more.
+	register_rest_route(
+		REST_NAMESPACE,
+		'/info',
+		array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => __NAMESPACE__ . '\\rest_get_info',
+				'permission_callback' => __NAMESPACE__ . '\\rest_can_get_info',
+				'args'                => array(),
+			),
+			'schema' => __NAMESPACE__ . '\\rest_get_info_schema',
+		)
+	);
 
 	add_filter( 'rest_post_dispatch', __NAMESPACE__ . '\\forbid_caching_of_own_responses', 10, 3 );
 }
 add_action( 'rest_api_init', __NAMESPACE__ . '\\register_rest_routes' );
+
+/**
+ * Loads the classes behind the REST routes. Called only from the route callbacks.
+ *
+ * @return void
+ */
+function load_rest_classes(): void {
+	require_once __DIR__ . '/includes/class-permissions.php';
+	require_once __DIR__ . '/includes/class-environment.php';
+	require_once __DIR__ . '/includes/class-info-controller.php';
+}
+
+/**
+ * Permission callback of GET /info: shop managers and administrators only.
+ *
+ * @return true|\WP_Error
+ */
+function rest_can_get_info() {
+	load_rest_classes();
+
+	return Permissions::require_capability( 'manage_woocommerce' );
+}
+
+/**
+ * Callback of GET /info.
+ *
+ * @return \WP_REST_Response
+ */
+function rest_get_info(): \WP_REST_Response {
+	load_rest_classes();
+
+	return ( new Info_Controller() )->get_info();
+}
+
+/**
+ * Schema of GET /info.
+ *
+ * @return array<string, mixed>
+ */
+function rest_get_info_schema(): array {
+	load_rest_classes();
+
+	return ( new Info_Controller() )->get_schema();
+}
 
 /**
  * Marks every response of this plugin's routes (errors included) as not cacheable.

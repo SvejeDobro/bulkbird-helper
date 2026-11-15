@@ -86,6 +86,11 @@ final class CSiteE2ETest extends E2ECase {
 		);
 	}
 
+	public function test_h0_59_foreign_rest_routes_load_only_the_main_file(): void {
+		self::assertSame( array( 'bulkbird-helper.php' ), self::internal()['plugin_files_after_routes'], 'registracija putanja ne smije učitati druge datoteke plugina' );
+		self::assertSame( array( 'bulkbird-helper.php' ), self::internal()['plugin_files_after_foreign_route'], 'tuđa REST putanja ne smije učitati druge datoteke plugina' );
+	}
+
 	public function test_h0_59_wp_cli_request_loads_only_what_it_needs(): void {
 		$loaded = self::internal()['plugin_files_loaded'];
 		sort( $loaded );

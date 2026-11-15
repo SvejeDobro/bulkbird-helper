@@ -15,7 +15,7 @@ return array(
 	array(
 		'H0.81',
 		'permission_callback na /info uvijek dopušta',
-		'includes/class-info-controller.php',
+		'bulkbird-helper.php',
 		"return Permissions::require_capability( 'manage_woocommerce' );",
 		'return true;',
 	),

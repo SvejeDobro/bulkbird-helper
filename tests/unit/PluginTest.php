@@ -48,7 +48,7 @@ final class PluginTest extends TestCase {
 	// --- Putanja /info (H0.21, H0.22, H0.24, H0.29, H0.75) --------------------------------------
 
 	public function test_h0_75_info_route_has_a_real_permission_callback(): void {
-		( new Info_Controller() )->register_routes();
+		Bulkbird\Helper\register_rest_routes();
 		self::assertCount( 1, BBH_State::$routes );
 		list( $namespace, $route, $args ) = BBH_State::$routes[0];
 		self::assertSame( 'bulkbird/v1', $namespace );
@@ -64,6 +64,20 @@ final class PluginTest extends TestCase {
 		BBH_State::$caps      = array( 'read', 'upload_files', 'edit_posts' );
 		$denied               = call_user_func( $args[0]['permission_callback'] );
 		self::assertInstanceOf( WP_Error::class, $denied, 'prijavljen bez manage_woocommerce mora biti odbijen' );
+
+		BBH_State::$caps = array( 'manage_woocommerce' );
+		self::assertTrue( call_user_func( $args[0]['permission_callback'] ) );
+		self::assertSame( array_keys( ( new Info_Controller() )->get_info()->get_data() ), array_keys( call_user_func( $args[0]['callback'] )->get_data() ) );
+		self::assertSame( ( new Info_Controller() )->get_schema(), call_user_func( $args['schema'] ) );
+	}
+
+	public function test_route_callbacks_are_plain_function_names_so_nothing_is_loaded_at_registration(): void {
+		Bulkbird\Helper\register_rest_routes();
+		$args = BBH_State::$routes[0][2];
+		foreach ( array( $args[0]['callback'], $args[0]['permission_callback'], $args['schema'] ) as $callback ) {
+			self::assertIsString( $callback, 'povratni pozivi moraju biti imena funkcija iz glavne datoteke' );
+			self::assertStringStartsWith( 'Bulkbird\\Helper\\rest_', $callback );
+		}
 	}
 
 	public function test_h0_21_h0_22_info_fields_and_types(): void {
