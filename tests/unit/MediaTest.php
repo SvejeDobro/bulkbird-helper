@@ -352,6 +352,33 @@ final class MediaTest extends TestCase {
 		self::assertSame( array(), $GLOBALS['wpdb']->log, 'odbijeni korisnik ne troši brojač i ne upisuje ništa' );
 	}
 
+	public function test_a_request_is_counted_once_however_often_wordpress_asks(): void {
+		// WordPress za zaglavlje "Allow" ponovno poziva provjere dozvola svih metoda putanje, s istim zahtjevom.
+		Bulkbird\Helper\register_rest_routes();
+		$media                    = BBH_State::$routes[1][2];
+		BBH_State::$logged_in     = true;
+		BBH_Media_State::$user_id = 7;
+		BBH_State::$caps          = array( 'upload_files', 'manage_woocommerce' );
+
+		$get = new WP_REST_Request( 'GET', '/bulkbird/v1/media' );
+		self::assertTrue( call_user_func( $media[0]['permission_callback'], $get ) );
+		self::assertTrue( call_user_func( $media[0]['permission_callback'], $get ) );
+		self::assertTrue( call_user_func( $media[1]['permission_callback'], $get ), 'provjera metode POST za zahtjev GET' );
+		self::assertSame( array( 'window_start', 'hits', 'upload_hits' ), array_keys( $GLOBALS['wpdb']->rows[7] ) );
+		self::assertSame( 1, $GLOBALS['wpdb']->rows[7]['hits'], 'jedan zahtjev = jedan pogodak' );
+		self::assertSame( 0, $GLOBALS['wpdb']->rows[7]['upload_hits'], 'čitanje se ne broji kao prijenos' );
+
+		$post = new WP_REST_Request( 'POST', '/bulkbird/v1/media' );
+		call_user_func( $media[1]['permission_callback'], $post );
+		call_user_func( $media[0]['permission_callback'], $post );
+		call_user_func( $media[1]['permission_callback'], $post );
+		self::assertSame( 2, $GLOBALS['wpdb']->rows[7]['hits'] );
+		self::assertSame( 1, $GLOBALS['wpdb']->rows[7]['upload_hits'], 'jedan prijenos = jedan pogodak prijenosa' );
+
+		call_user_func( $media[0]['permission_callback'], new WP_REST_Request( 'GET', '/bulkbird/v1/media' ) );
+		self::assertSame( 3, $GLOBALS['wpdb']->rows[7]['hits'], 'novi zahtjev se broji' );
+	}
+
 	public function test_media_route_arguments(): void {
 		Bulkbird\Helper\register_rest_routes();
 		$get  = BBH_State::$routes[1][2][0]['args'];
@@ -360,7 +387,12 @@ final class MediaTest extends TestCase {
 		self::assertSame( array( 1, 100, 50 ), array( $get['per_page']['minimum'], $get['per_page']['maximum'], $get['per_page']['default'] ) );
 		self::assertSame( array( 'date', 'title' ), $get['orderby']['enum'] );
 		self::assertSame( 'date-time', $get['modified_after']['format'] );
-		self::assertSame( 'uuid', $post['client_upload_id']['format'] );
+		foreach ( array( '3f2b8c1e-9d4a-4b7e-8f1a-2c3d4e5f6a7b', '3F2B8C1E-9D4A-4B7E-8F1A-2C3D4E5F6A7B' ) as $uuid ) {
+			self::assertSame( 1, preg_match( '/' . $post['client_upload_id']['pattern'] . '/', $uuid ), 'H2.11: velika i mala slova' );
+		}
+		foreach ( array( '123', 'nije-uuid', str_repeat( 'a', 36 ), '3f2b8c1e-9d4a-4b7e-8f1a-2c3d4e5f6a7b-extra', ' 3f2b8c1e-9d4a-4b7e-8f1a-2c3d4e5f6a7b' ) as $bad ) {
+			self::assertSame( 0, preg_match( '/' . $post['client_upload_id']['pattern'] . '/', $bad ), $bad );
+		}
 		self::assertSame( 255, $post['title']['maxLength'] );
 		self::assertSame( 1000, $post['alt']['maxLength'] );
 	}

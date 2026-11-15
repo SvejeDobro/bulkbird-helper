@@ -87,6 +87,9 @@ class WP_HTTP_Response {
 class WP_REST_Response extends WP_HTTP_Response {}
 class WP_REST_Request {
 	public function __construct( public string $method = 'GET', public string $route = '' ) {}
+	public function get_method(): string {
+		return $this->method;
+	}
 	public function get_route(): string {
 		return $this->route;
 	}

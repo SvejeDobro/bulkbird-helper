@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.2.0-rc.1
+ * Version:              0.2.0-rc.2
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.2.0-rc.1';
+const VERSION           = '0.2.0-rc.2';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -220,7 +220,8 @@ function register_rest_routes(): void {
 					// no fields at all and must be answered with 413, not with "missing parameter".
 					'client_upload_id' => array(
 						'type'              => 'string',
-						'format'            => 'uuid',
+						// Not "format: uuid": WordPress accepts only lower case there, and letter case must not matter.
+						'pattern'           => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
 						'validate_callback' => 'rest_validate_request_arg',
 					),
 					'title'            => array(
@@ -269,11 +270,18 @@ function load_media_classes(): void {
 /**
  * Shared gate of every route: capabilities first, then the per-user rate limit.
  *
+ * WordPress calls the permission callbacks of all methods of a route again when it builds
+ * the "Allow" header, with the same request object. A request must be counted once, and
+ * only as what it really is, so the verdict is remembered per request object and "upload"
+ * is taken from the request's own method.
+ *
  * @param string[] $capabilities Capabilities the user must have (all of them).
- * @param bool     $is_upload    Whether the request counts as an upload.
+ * @param mixed    $request      The REST request, when WordPress passes it.
  * @return true|\WP_Error
  */
-function rest_guard( array $capabilities, bool $is_upload ) {
+function rest_guard( array $capabilities, $request = null ) {
+	static $verdicts = array();
+
 	load_rest_classes();
 
 	$allowed = Permissions::require_capabilities( $capabilities );
@@ -281,34 +289,49 @@ function rest_guard( array $capabilities, bool $is_upload ) {
 		return $allowed;
 	}
 
-	return Rate_Limiter::check( get_current_user_id(), $is_upload );
+	if ( ! $request instanceof \WP_REST_Request ) {
+		return Rate_Limiter::check( get_current_user_id(), false );
+	}
+
+	$key = spl_object_id( $request );
+	if ( ! isset( $verdicts[ $key ] ) || $verdicts[ $key ]['request'] !== $request ) {
+		$verdicts[ $key ] = array(
+			'request' => $request,
+			'verdict' => Rate_Limiter::check( get_current_user_id(), 'POST' === $request->get_method() && is_own_route( $request->get_route() ) ),
+		);
+	}
+
+	return $verdicts[ $key ]['verdict'];
 }
 
 /**
  * Permission callback of GET /info: shop managers and administrators only.
  *
+ * @param mixed $request The REST request.
  * @return true|\WP_Error
  */
-function rest_can_get_info() {
-	return rest_guard( array( 'manage_woocommerce' ), false );
+function rest_can_get_info( $request = null ) {
+	return rest_guard( array( 'manage_woocommerce' ), $request );
 }
 
 /**
  * Permission callback of GET /media.
  *
+ * @param mixed $request The REST request.
  * @return true|\WP_Error
  */
-function rest_can_read_media() {
-	return rest_guard( array( 'upload_files', 'manage_woocommerce' ), false );
+function rest_can_read_media( $request = null ) {
+	return rest_guard( array( 'upload_files', 'manage_woocommerce' ), $request );
 }
 
 /**
  * Permission callback of POST /media.
  *
+ * @param mixed $request The REST request.
  * @return true|\WP_Error
  */
-function rest_can_upload_media() {
-	return rest_guard( array( 'upload_files', 'manage_woocommerce' ), true );
+function rest_can_upload_media( $request = null ) {
+	return rest_guard( array( 'upload_files', 'manage_woocommerce' ), $request );
 }
 
 /**
