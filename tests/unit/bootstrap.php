@@ -44,6 +44,11 @@ final class BBH_State {
 		BBH_Media_State::$updated_options = array();
 		BBH_Media_State::$wp_max_upload   = 67108864;
 		BBH_Media_State::$editor_supports = array( 'image/webp', 'image/avif' );
+		BBH_Media_State::$insert_result    = 0;
+		BBH_Media_State::$deleted_files    = array();
+		BBH_Media_State::$post_meta        = array();
+		BBH_Media_State::$upload_dir_error = false;
+		BBH_Media_State::$handled_uploads  = 0;
 		$GLOBALS['wpdb']                  = new BBH_Fake_Wpdb();
 		$_GET                  = array();
 		$_POST                 = array();
@@ -92,6 +97,11 @@ class WP_REST_Request {
 	}
 	public function get_route(): string {
 		return $this->route;
+	}
+	/** @var array<string, mixed> */
+	public array $params = array();
+	public function get_param( string $name ) {
+		return $this->params[ $name ] ?? null;
 	}
 }
 class WP_REST_Server {
@@ -274,6 +284,15 @@ final class BBH_Media_State {
 	public static ?array $rate_limits    = null;
 	/** @var array<int, array<int, mixed>> */
 	public static array $updated_options = array();
+	/** @var int|WP_Error What wp_insert_attachment() returns. */
+	public static $insert_result         = 0;
+	/** @var string[] */
+	public static array $deleted_files   = array();
+	/** @var array<int, array<int, mixed>> */
+	public static array $post_meta       = array();
+	/** @var string|false */
+	public static $upload_dir_error      = false;
+	public static int $handled_uploads   = 0;
 }
 
 function apply_filters( string $hook, $value ) {
@@ -322,12 +341,41 @@ function is_wp_error( $thing ): bool {
 	return $thing instanceof WP_Error;
 }
 
+function wp_insert_attachment( array $args, $file = false, int $parent = 0, bool $wp_error = false ) {
+	return BBH_Media_State::$insert_result;
+}
+function wp_upload_dir(): array {
+	return array(
+		'path'  => sys_get_temp_dir(),
+		'error' => BBH_Media_State::$upload_dir_error,
+	);
+}
+function wp_handle_upload( array $file, array $overrides ): array {
+	++BBH_Media_State::$handled_uploads;
+	return array( 'error' => 'Specified file failed upload test.' );
+}
+function wp_delete_file( string $file ): bool {
+	BBH_Media_State::$deleted_files[] = $file;
+	return @unlink( $file );
+}
+function update_post_meta( int $post_id, string $key, $value ): bool {
+	BBH_Media_State::$post_meta[] = array( $post_id, $key, $value );
+	return true;
+}
+function wp_generate_attachment_metadata( int $attachment_id, string $file ): array {
+	return array();
+}
+function wp_update_attachment_metadata( int $attachment_id, array $data ): bool {
+	return true;
+}
+
 $bbh_root = dirname( __DIR__, 2 );
 require_once $bbh_root . '/bulkbird-helper.php';
 require_once $bbh_root . '/includes/class-permissions.php';
 require_once $bbh_root . '/includes/class-rate-limiter.php';
 require_once $bbh_root . '/includes/class-media-rules.php';
 require_once $bbh_root . '/includes/class-media-library.php';
+require_once $bbh_root . '/includes/class-media-controller.php';
 require_once $bbh_root . '/includes/class-environment.php';
 require_once $bbh_root . '/includes/class-info-controller.php';
 require_once $bbh_root . '/includes/class-activation.php';

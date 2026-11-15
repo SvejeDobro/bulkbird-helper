@@ -33,6 +33,18 @@ Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
 
 Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizvodi, ni narudžbe, ni datoteke.
 
+## CI (GitHub Actions)
+
+- CI pratim sam: nakon svakog pusha `~/bin/ci-status --wait <commit|oznaka|grana>` i rezultat u izvještaj.
+  Pali posao: popraviti, pushati, pričekati; ako je uzrok u pluginu (ne u testu ili pripremi), opisati ga.
+- Token je u `~/.config/bulkbird-helper/github-ci-token` (600): fine-grained, samo ovaj repozitorij,
+  **samo čitanje Actionsa** (i Metadata). Nikad se ne ispisuje, ne zapisuje u log, repozitorij ni bilješke
+  i ne stavlja u argumente naredbi; čita se iz datoteke u zaglavlje zahtjeva.
+- **Token istječe u utorak 16. 11. 2027.** Kad istekne ili prestane raditi (`ci-status` izlazi s 4),
+  javiti vlasniku da napravi novi.
+- Ako poslovi nisu pokrenuti zbog potrošenih minuta ili limita potrošnje, javiti vlasniku odmah.
+- CI se pokreće na `main`, na granama `paket-*` i na oznakama `v*`.
+
 ## Stanje
 
 Faza 0 je izvedena i prihvaćena (`0.1.0`). Faze 1 i 2 (`GET` i `POST /media`, verzija `0.2.0`): scenariji su
@@ -69,8 +81,12 @@ mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 3. **Nula opterećenja webshopa.** Nula CSS-a i JS-a (`wp_enqueue_*` se ne koristi). Na stranicama za
    kupce nijedan upit prema bazi. Plugin radi samo na REST zahtjevima za svoje putanje i na kukama
    spremanja/brisanja proizvoda.
-4. **Ništa ne briše** u trgovini (proizvodi, mediji, narudžbe). Jedino brisanje: vlastita tablica
-   dnevnika i vlastiti zapisi pri deinstalaciji.
+4. **Ništa ne briše** u trgovini (proizvodi, mediji, narudžbe). Jedino brisanje u bazi: vlastite tablice
+   i vlastiti zapisi pri deinstalaciji. **Jedino brisanje datoteka u kodu plugina** (prihvatio vlasnik
+   15. 11. 2026., odluka P22): u `Media_Controller::create_attachment()`, kad stvaranje privitka padne
+   nakon što je datoteka već premještena, plugin poziva `wp_delete_file()` nad tom svojom netom
+   spremljenom datotekom. Nijedno drugo brisanje datoteka se ne dodaje bez odobrenja vlasnika.
+   Pokrivaju ga testovi H2.69 (jedinični i integracijski) i namjerni kvar H2.69.
 5. **Bez osobnih podataka** u bilo kojem odgovoru (kupci, ID-evi narudžbi, adrese, e-mailovi, imena korisnika).
 6. **Isti ključ.** Autentikacija WooCommerce REST ključem; dozvola ključa (read / read_write) vrijedi i za plugin.
 7. **Najmanja prava.** Svaka putanja provjerava sposobnost korisnika; nijedna nema
@@ -80,6 +96,7 @@ mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 
 - Svaki ulaz validiran i saniran kroz `args` sheme REST putanja; SQL samo kroz `$wpdb->prepare`.
 - Ograničenje učestalosti po korisniku (npr. 120 zahtjeva/min, prijenos slika 30/min) → 429 s `Retry-After`.
+  Brojač koji se ne može spremiti pušta zahtjev nebrojen (odluka P21, prihvatio vlasnik 15. 11. 2026.).
 - Sadržaj zahtjeva se ne zapisuje u log; greške samo s kodom i kratkim opisom.
   Odgovori grešaka bez tragova stoga i bez putanja na disku.
 - Opcije s `autoload = no`.

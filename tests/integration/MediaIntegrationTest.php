@@ -274,6 +274,11 @@ final class MediaIntegrationTest extends WP_UnitTestCase {
 		$image = $this->image( 'ostaje nakon deinstalacije' );
 		update_post_meta( $image, '_bulkbird_upload_id', wp_generate_uuid4() );
 
+		// Raniji testovi su tablicu već stvorili, a testni okvir je između testova vratio samo opcije
+		// (stvaranje tablice se ne može poništiti transakcijom). Ovaj test kreće od stanja bez tablice.
+		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore
+		delete_option( 'bulkbird_helper_db_version' );
+
 		$this->as_role( 'shop_manager' );
 		$this->media();
 		$this->assertSame( 1, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ), 'tablica postoji i ima redak korisnika' ); // phpcs:ignore
@@ -290,5 +295,155 @@ final class MediaIntegrationTest extends WP_UnitTestCase {
 		$this->assertFalse( get_option( 'bulkbird_helper_db_version' ) );
 		$this->assertNotNull( get_post( $image ), 'privitak ostaje' );
 		$this->assertNotSame( '', get_post_meta( $image, '_bulkbird_upload_id', true ), 'meta ostaje' );
+	}
+
+	public function test_h1_47_response_429_matches_the_fixture(): void {
+		$this->skip_unless_supported();
+		add_filter(
+			'bulkbird_helper_rate_limits',
+			static fn(): array => array(
+				'requests' => 1,
+				'window'   => 3600,
+			)
+		);
+		$this->as_role( 'shop_manager' );
+		$this->assertSame( 200, $this->media()->get_status() );
+
+		$request  = new WP_REST_Request( 'GET', '/bulkbird/v1/media' );
+		$server   = rest_get_server();
+		$response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $server->dispatch( $request ) ), $server, $request );
+		$body     = json_decode( (string) wp_json_encode( $server->response_to_data( $response, false ) ), true );
+
+		$this->assertSame( 429, $response->get_status() );
+		$retry_after = (int) $response->get_headers()['Retry-After'];
+		$this->assertGreaterThanOrEqual( 1, $retry_after );
+		$this->assertLessThanOrEqual( 3600, $retry_after );
+		$this->assertStringContainsString( 'no-store', $response->get_headers()['Cache-Control'] );
+
+		$file = dirname( __DIR__, 2 ) . '/fixtures/v1/error-429.json';
+		if ( '1' === getenv( 'BBH_WRITE_FIXTURES' ) ) {
+			file_put_contents( $file, wp_json_encode( $body, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n" ); // phpcs:ignore
+		}
+		$fixture                        = json_decode( (string) file_get_contents( $file ), true ); // phpcs:ignore
+		$fixture['data']['retry_after'] = $retry_after;
+		$this->assertSame( $fixture, $body, 'fixtures/v1/error-429.json mora biti jednak stvarnom odgovoru (osim broja sekundi)' );
+	}
+
+	/** @param mixed ...$args */
+	private function controller_call( string $method, ...$args ) {
+		Bulkbird\Helper\load_media_classes();
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$controller = new Bulkbird\Helper\Media_Controller();
+		$reflection = new ReflectionMethod( $controller, $method );
+		$reflection->setAccessible( true );
+		return $reflection->invoke( $controller, ...$args );
+	}
+
+	private function attachment_count(): int {
+		global $wpdb;
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment'" ); // phpcs:ignore
+	}
+
+	private const INSPECTED = array(
+		'mime'      => 'image/jpeg',
+		'extension' => 'jpg',
+		'width'     => 640,
+		'height'    => 480,
+		'sha256'    => 'abc',
+	);
+
+	public function test_h2_30_unwritable_uploads_folder(): void {
+		$this->skip_unless_supported();
+		$this->as_role( 'shop_manager' );
+		$before = $this->attachment_count();
+		$tmp    = (string) wp_tempnam( 'bbh-test' );
+		copy( DIR_TESTDATA . '/images/canola.jpg', $tmp );
+
+		// Lažni kvar: WordPress javlja da mapu za prijenose ne može stvoriti ili u nju pisati.
+		$broken = static function ( array $dirs ): array {
+			$dirs['error'] = 'Unable to create directory ' . $dirs['path'] . '. Is its parent directory writable by the server?';
+			return $dirs;
+		};
+		add_filter( 'upload_dir', $broken );
+		$result = $this->controller_call(
+			'store',
+			array(
+				'name'     => 'slika.jpg',
+				'tmp_name' => $tmp,
+				'size'     => (int) filesize( $tmp ),
+				'error'    => 0,
+				'type'     => '',
+			),
+			self::INSPECTED,
+			wp_generate_uuid4(),
+			new WP_REST_Request( 'POST', '/bulkbird/v1/media' )
+		);
+		remove_filter( 'upload_dir', $broken );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'bulkbird_upload_failed', $result->get_error_code() );
+		$this->assertSame( array( 'status' => 500 ), $result->get_error_data() );
+		$this->assertDoesNotMatchRegularExpression( '#/|uploads|directory#i', $result->get_error_message(), 'poruka bez putanje i bez pojedinosti' );
+		$this->assertSame( $before, $this->attachment_count(), 'ništa polovično u biblioteci' );
+		$this->assertFileExists( $tmp, 'privremena datoteka nije dirana' );
+		unlink( $tmp );
+	}
+
+	public function test_h2_69_failed_attachment_leaves_no_file_and_deletes_nothing_else(): void {
+		$this->skip_unless_supported();
+		$this->as_role( 'shop_manager' );
+		$existing      = $this->image( 'postojeća slika' );
+		$existing_file = (string) get_attached_file( $existing );
+		$uploads       = wp_upload_dir();
+		$stored        = $uploads['path'] . '/bbh-test-netom-spremljena.jpg';
+		$neighbour     = $uploads['path'] . '/bbh-test-susjed.jpg';
+		copy( DIR_TESTDATA . '/images/canola.jpg', $stored );
+		copy( DIR_TESTDATA . '/images/canola.jpg', $neighbour );
+		$before = $this->attachment_count();
+
+		// Lažni kvar nakon premještanja: WordPress odbija stvoriti privitak.
+		add_filter( 'wp_insert_post_empty_content', '__return_true' );
+		$result = $this->controller_call(
+			'create_attachment',
+			array(
+				'file' => $stored,
+				'url'  => $uploads['url'] . '/bbh-test-netom-spremljena.jpg',
+			),
+			'bbh-test-netom-spremljena.jpg',
+			self::INSPECTED,
+			wp_generate_uuid4(),
+			new WP_REST_Request( 'POST', '/bulkbird/v1/media' )
+		);
+		remove_filter( 'wp_insert_post_empty_content', '__return_true' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'bulkbird_upload_failed', $result->get_error_code() );
+		$this->assertFileDoesNotExist( $stored, 'netom spremljena datoteka ne ostaje' );
+		$this->assertFileExists( $neighbour, 'susjedna datoteka nije dirana' );
+		$this->assertFileExists( $existing_file, 'datoteka postojećeg privitka nije dirana' );
+		$this->assertNotNull( get_post( $existing ) );
+		$this->assertSame( $before, $this->attachment_count() );
+		unlink( $neighbour );
+
+		// Bez kvara isti korak stvara privitak i ništa ne briše.
+		copy( DIR_TESTDATA . '/images/canola.jpg', $stored );
+		$upload_id = wp_generate_uuid4();
+		$created   = $this->controller_call(
+			'create_attachment',
+			array(
+				'file' => $stored,
+				'url'  => $uploads['url'] . '/bbh-test-netom-spremljena.jpg',
+			),
+			'bbh-test-netom-spremljena.jpg',
+			self::INSPECTED,
+			$upload_id,
+			new WP_REST_Request( 'POST', '/bulkbird/v1/media' )
+		);
+		$this->assertIsInt( $created );
+		$this->assertFileExists( $stored );
+		$this->assertSame( $upload_id, get_post_meta( $created, '_bulkbird_upload_id', true ) );
+		$this->assertSame( 0, (int) get_post( $created )->post_parent );
+		$this->assertSame( $before + 1, $this->attachment_count() );
 	}
 }

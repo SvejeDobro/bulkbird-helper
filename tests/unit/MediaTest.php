@@ -403,4 +403,72 @@ final class MediaTest extends TestCase {
 		self::assertSame( '17', $out->headers['Retry-After'] );
 		self::assertSame( 'no-store, private, max-age=0', $out->headers['Cache-Control'] );
 	}
+
+	// --- Spremanje (H2.30, H2.69; kvarovi H2.30, H2.69) ------------------------------------------
+
+	/** @param mixed ...$args */
+	private function controller_call( string $method, ...$args ) {
+		$controller = new Bulkbird\Helper\Media_Controller();
+		$reflection = new ReflectionMethod( $controller, $method );
+		$reflection->setAccessible( true );
+		return $reflection->invoke( $controller, ...$args );
+	}
+
+	private const INSPECTED = array( 'mime' => 'image/jpeg', 'extension' => 'jpg', 'width' => 12, 'height' => 8, 'sha256' => 'abc' );
+
+	public function test_h2_69_failed_attachment_removes_only_the_file_just_stored(): void {
+		$stored    = $this->image( 'jpeg' );
+		$neighbour = $this->image( 'png' );
+		BBH_Media_State::$insert_result = new WP_Error( 'db_insert_error', 'Could not insert into /var/lib/mysql' );
+
+		$result = $this->controller_call( 'create_attachment', array( 'file' => $stored, 'url' => 'https://shop.example/x.jpg' ), 'x.jpg', self::INSPECTED, 'id', new WP_REST_Request( 'POST', '/bulkbird/v1/media' ) );
+
+		self::assert_error( $result, 'bulkbird_upload_failed', 500 );
+		self::assertFileDoesNotExist( $stored, 'netom spremljena datoteka ne smije ostati' );
+		self::assertSame( array( $stored ), BBH_Media_State::$deleted_files, 'briše se samo ta jedna datoteka' );
+		self::assertFileExists( $neighbour );
+		self::assertSame( array(), BBH_Media_State::$post_meta, 'ništa se ne upisuje za privitak koji nije nastao' );
+	}
+
+	public function test_h2_69_successful_attachment_deletes_nothing(): void {
+		$stored = $this->image( 'jpeg' );
+		BBH_Media_State::$insert_result = 77;
+
+		$request         = new WP_REST_Request( 'POST', '/bulkbird/v1/media' );
+		$request->params = array( 'alt' => ' <b>Opis</b> ' );
+		$result          = $this->controller_call( 'create_attachment', array( 'file' => $stored, 'url' => 'https://shop.example/x.jpg' ), 'x.jpg', self::INSPECTED, 'id', $request );
+
+		self::assertSame( 77, $result );
+		self::assertFileExists( $stored );
+		self::assertSame( array(), BBH_Media_State::$deleted_files );
+		self::assertSame(
+			array(
+				array( 77, '_bulkbird_upload_id', 'id' ),
+				array( 77, '_bulkbird_upload_sha256', 'abc' ),
+				array( 77, '_wp_attachment_image_alt', 'Opis' ),
+			),
+			BBH_Media_State::$post_meta
+		);
+	}
+
+	public function test_h2_30_unwritable_uploads_folder_fails_before_anything_is_moved(): void {
+		BBH_Media_State::$upload_dir_error = 'Unable to create directory /home/shop/wp-content/uploads/2026/11. Is its parent directory writable by the server?';
+		$tmp  = $this->image( 'jpeg' );
+		$file = array( 'name' => 'x.jpg', 'tmp_name' => $tmp, 'size' => 100, 'error' => 0, 'type' => 'image/jpeg' );
+
+		$result = $this->controller_call( 'move_into_uploads', $file, self::INSPECTED );
+
+		self::assert_error( $result, 'bulkbird_upload_failed', 500 );
+		self::assertSame( 0, BBH_Media_State::$handled_uploads, 'ništa se ne premješta' );
+		self::assertSame( array(), BBH_Media_State::$deleted_files );
+		self::assertFileExists( $tmp );
+	}
+
+	public function test_h2_30_a_failed_move_is_reported_without_detail(): void {
+		$tmp    = $this->image( 'jpeg' );
+		$result = $this->controller_call( 'move_into_uploads', array( 'name' => 'x.jpg', 'tmp_name' => $tmp, 'size' => 100, 'error' => 0, 'type' => 'image/jpeg' ), self::INSPECTED );
+		self::assert_error( $result, 'bulkbird_upload_failed', 500 );
+		self::assertSame( 1, BBH_Media_State::$handled_uploads );
+		self::assertSame( array(), BBH_Media_State::$deleted_files );
+	}
 }

@@ -38,6 +38,14 @@ if grep -nE '\$wpdb->(query|get_var|get_row|get_col|get_results)\(\s*["'"'"']' "
   bad "SQL bez \$wpdb->prepare"
 fi
 
+# 4b. Brisanje datoteka: jedino dopušteno je jedan wp_delete_file() u Media_Controlleru (odluka P22, H2.69).
+if grep -nE '\b(unlink|rmdir|rename|wp_delete_attachment|wp_delete_post|wp_trash_post|wp_delete_attachment_files)\s*\(|->(delete|rmdir|move)\s*\(' "${CODE[@]}"; then
+  bad "kod plugina briše ili premješta datoteke ili zapise trgovine"
+fi
+DELETES=$(grep -cE '\bwp_delete_file\s*\(' "${CODE[@]}" | awk -F: '{s+=$NF} END {print s+0}')
+IN_CONTROLLER=$(grep -cE '\bwp_delete_file\s*\(' includes/class-media-controller.php || true)
+[ "$DELETES" -eq 1 ] && [ "$IN_CONTROLLER" -eq 1 ] || bad "wp_delete_file() mora postojati točno jednom, u includes/class-media-controller.php (nađeno: $DELETES)"
+
 # 5. Tajne u repozitoriju.
 if git grep -nIE '\bc[ks]_[0-9a-f]{40}\b|BEGIN [A-Z ]*PRIVATE KEY' -- . ':!bin/check-guards.sh' ; then
   bad "tajna (REST ključ ili privatni ključ) u repozitoriju"

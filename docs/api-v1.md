@@ -8,7 +8,7 @@ Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika pr
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.2.0-rc.2` (faza 0: `/info`; faze 1 i 2: `/media`)
+- Verzija plugina: `0.2.0-rc.3` (faza 0: `/info`; faze 1 i 2: `/media`)
 
 ## 1. Otkrivanje
 
@@ -96,7 +96,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 
 ```json
 {
-    "plugin_version": "0.2.0-rc.2",
+    "plugin_version": "0.2.0-rc.3",
     "api_version": 1,
     "features": ["media.read", "media.upload"],
     "wordpress_version": "7.1.4",
@@ -216,12 +216,17 @@ Greške (WordPress oblik, poglavlje 3):
 | drugi zahtjev s istim `client_upload_id` još traje (dulje od 10 s) | 409 | `bulkbird_upload_in_progress`; zaglavlje `Retry-After: 5` |
 | datoteka veća od `media.upload_max_bytes` | 413 | `bulkbird_file_too_large` |
 | vrsta koju trgovina ne prima (i svaki SVG, PDF, PHP…) | 415 | `bulkbird_unsupported_type` |
-| datoteka se nije mogla spremiti (disk, dozvole) | 500 | `bulkbird_upload_failed` |
+| datoteka se nije mogla spremiti (disk, dozvole) | 500 | `bulkbird_upload_failed`; poruka bez putanje i bez pojedinosti |
 
 Dva istovremena zahtjeva s istim `client_upload_id`: jedan dobiva 201, drugi pričeka i dobiva 200 s istom stavkom.
 
 **Zahtjev koji odbije poslužitelj ispred WordPressa** (nginx, Cloudflare, ograničenje veličine tijela) vraća
 413 **bez JSON tijela plugina**. Bulkbird mora podnijeti 413 i kad odgovor nije JSON.
+
+**Kad spremanje ne uspije (500), u trgovini ne ostaje ništa polovično.** Neupisivu mapu za prijenose plugin
+prepozna prije premještanja datoteke. Ako WordPress odbije stvoriti privitak nakon što je datoteka već
+premještena, plugin uklanja tu svoju netom spremljenu datoteku (jedino brisanje datoteka u pluginu; ništa
+postojeće se ne dira). Isti `client_upload_id` se nakon 500 smije ponoviti.
 
 Slika koja je trajno obrisana u adminu više ne postoji: isti `client_upload_id` tada stvara novu sliku (201).
 Ista datoteka s **novim** `client_upload_id` namjerno stvara novu sliku; plugin ne sprječava duplikate po sadržaju.
@@ -236,6 +241,12 @@ brojač), u fiksnom prozoru od 60 sekundi:
 
 Kad je ograničenje prijeđeno: **429** `bulkbird_rate_limited`, zaglavlje `Retry-After` (sekunde do kraja
 prozora) i isti broj u `data.retry_after`. Nakon toga zahtjevi opet prolaze.
+
+Primjer odgovora: `fixtures/v1/error-429.json` (broj sekundi se mijenja).
+
+**Brojač koji se ne može spremiti pušta zahtjev (odluka vlasnika, 15. 11. 2026.).** Ako upis brojača u bazu ili
+object cache ne uspije, zahtjev prolazi nebrojen: kvar brojača ne smije srušiti sinkronizaciju. Ograničenje je
+zaštita trgovine od pretjeranog prometa, ne sigurnosna granica; provjere ključa i prava vrijede uvijek.
 
 Zahtjevi bez prijave (401) i zahtjevi korisnika bez prava (403) se ne broje. Trgovina može promijeniti
 ograničenja filterom `bulkbird_helper_rate_limits`, pa se Bulkbird oslanja na `Retry-After`, ne na brojke.

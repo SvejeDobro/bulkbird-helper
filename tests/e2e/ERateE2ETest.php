@@ -41,6 +41,11 @@ final class ERateE2ETest extends E2ECase {
 		self::assertMatchesRegularExpression( '/no-store|no-cache/', $refused['headers']['cache-control'] ?? '', 'H1.52' );
 		self::assertStringNotContainsString( 'plugin_version', $refused['body'] );
 
+		// Stvarni odgovor jednak je primjeru fixtures/v1/error-429.json (osim broja sekundi).
+		$fixture                        = json_decode( (string) file_get_contents( dirname( __DIR__, 2 ) . '/fixtures/v1/error-429.json' ), true );
+		$fixture['data']['retry_after'] = $retry_after;
+		self::assertSame( $fixture, $refused['json'] );
+
 		// H1.50: drugi ključ istog korisnika dijeli brojač.
 		self::assertSame( 429, self::single( 'GET', self::MEDIA . '?per_page=1', 'K_RW' )['status'] );
 

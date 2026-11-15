@@ -1,0 +1,8 @@
+{
+    "code": "bulkbird_rate_limited",
+    "message": "Too many requests. Try again later.",
+    "data": {
+        "status": 429,
+        "retry_after": 37
+    }
+}

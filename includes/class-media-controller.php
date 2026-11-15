@@ -193,11 +193,40 @@ final class Media_Controller {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-		$failed = Media_Rules::error( 'bulkbird_upload_failed', __( 'The file could not be stored.', 'bulkbird-helper' ), 500 );
-
 		$filename     = Media_Rules::safe_filename( $file['name'], $inspected['extension'] );
 		$file['name'] = $filename;
 		$file['type'] = $inspected['mime'];
+
+		$moved = $this->move_into_uploads( $file, $inspected );
+		if ( is_wp_error( $moved ) ) {
+			return $moved;
+		}
+
+		return $this->create_attachment( $moved, $filename, $inspected, $upload_id, $request );
+	}
+
+	/**
+	 * The one error for everything that goes wrong while storing. Carries no path and no detail.
+	 *
+	 * @return \WP_Error
+	 */
+	private function storing_failed(): \WP_Error {
+		return Media_Rules::error( 'bulkbird_upload_failed', __( 'The file could not be stored.', 'bulkbird-helper' ), 500 );
+	}
+
+	/**
+	 * Moves the uploaded file into the uploads folder.
+	 *
+	 * @param array{name: string, tmp_name: string, size: int, error: int, type: string}      $file      Uploaded file, already renamed.
+	 * @param array{mime: string, extension: string, width: int, height: int, sha256: string} $inspected What the content is.
+	 * @return array{file: string, url: string}|\WP_Error
+	 */
+	private function move_into_uploads( array $file, array $inspected ) {
+		// An uploads folder that cannot be created or written is reported by WordPress here, before anything is moved.
+		$uploads = wp_upload_dir();
+		if ( ! empty( $uploads['error'] ) ) {
+			return $this->storing_failed();
+		}
 
 		$moved = wp_handle_upload(
 			$file,
@@ -207,22 +236,40 @@ final class Media_Controller {
 			)
 		);
 		if ( ! is_array( $moved ) || isset( $moved['error'] ) || empty( $moved['file'] ) || empty( $moved['url'] ) ) {
-			return $failed;
+			return $this->storing_failed();
 		}
 
+		return array(
+			'file' => (string) $moved['file'],
+			'url'  => (string) $moved['url'],
+		);
+	}
+
+	/**
+	 * Creates the attachment for a file this request has just moved into the uploads folder.
+	 *
+	 * @param array{file: string, url: string}                                                $moved     The stored file.
+	 * @param string                                                                          $filename  Its safe name.
+	 * @param array{mime: string, extension: string, width: int, height: int, sha256: string} $inspected What the content is.
+	 * @param string                                                                          $upload_id Normalised client upload id.
+	 * @param \WP_REST_Request                                                                $request   Request.
+	 * @return int|\WP_Error Attachment id.
+	 */
+	private function create_attachment( array $moved, string $filename, array $inspected, string $upload_id, \WP_REST_Request $request ) {
 		$title = $request->get_param( 'title' );
 		$title = is_string( $title ) && '' !== trim( $title ) ? sanitize_text_field( $title ) : sanitize_text_field( pathinfo( $filename, PATHINFO_FILENAME ) );
 
 		$attachment_id = wp_insert_attachment(
-			Media_Rules::attachment_args( $title, $inspected['mime'], (string) $moved['url'], get_current_user_id() ),
-			(string) $moved['file'],
+			Media_Rules::attachment_args( $title, $inspected['mime'], $moved['url'], get_current_user_id() ),
+			$moved['file'],
 			0,
 			true
 		);
 		if ( is_wp_error( $attachment_id ) || ! $attachment_id ) {
-			// Nothing half-done may stay behind: remove the file this request has just stored.
-			wp_delete_file( (string) $moved['file'] );
-			return $failed;
+			// The only file deletion in this plugin: nothing half-done may stay behind,
+			// so the file this very request has just stored is removed. Nothing else is touched.
+			wp_delete_file( $moved['file'] );
+			return $this->storing_failed();
 		}
 		$attachment_id = (int) $attachment_id;
 
@@ -235,7 +282,7 @@ final class Media_Controller {
 			update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt ) );
 		}
 
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, (string) $moved['file'] ) );
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $moved['file'] ) );
 
 		return $attachment_id;
 	}

@@ -111,7 +111,7 @@ Zahtjev: `multipart/form-data`, polje datoteke `file`, neobavezno `title`, `alt`
 | H2.10 | `client_upload_id` koji nije UUID (`123`, prazan, predug, s razmacima) | 400 `rest_invalid_param` |
 | H2.11 | UUID velikim slovima | prihvaća se; uspoređuje se bez razlike velikih i malih slova |
 | H2.12 | Tijelo nije `multipart/form-data` (npr. JSON ili sirovi bajtovi) | 400 `bulkbird_missing_file` |
-| H2.13 | Prekinut prijenos (PHP javlja djelomičnu datoteku) | 400 `bulkbird_upload_incomplete`; ništa nije spremljeno |
+| H2.13 | Prekinut prijenos (PHP javlja djelomičnu datoteku) | 400 `bulkbird_upload_incomplete`; ništa nije spremljeno. **Poznata praznina:** nije izvedeno (vidi „Poznate praznine”) |
 
 ## 5. `POST /media` — vrsta, veličina, sadržaj
 
@@ -133,7 +133,7 @@ Zahtjev: `multipart/form-data`, polje datoteke `file`, neobavezno `title`, `alt`
 | H2.27 | Zahtjev koji odbije nginx ili Cloudflare prije WordPressa | odgovor nije JSON plugina; dokumentira se u `docs/api-v1.md` da Bulkbird mora podnijeti 413 bez JSON tijela |
 | H2.28 | Slika golemih dimenzija u maloj datoteci (npr. 20 000 × 20 000 px) | 400 `bulkbird_image_too_large` prije izrade umanjenih slika (odluka P8) |
 | H2.29 | Trgovina koja je sama zabranila neku vrstu (npr. WebP kroz filter `upload_mimes`) | 415 — poštuje se postavka trgovine (odluka P9) |
-| H2.30 | Mapa za prijenose nije upisiva ili je disk pun (integracijski test s lažnim kvarom) | 500 `bulkbird_upload_failed`, poruka bez putanje; ništa polovično u biblioteci |
+| H2.30 | Mapa za prijenose nije upisiva ili je disk pun (integracijski test s lažnim kvarom) | 500 `bulkbird_upload_failed`, poruka bez putanje; ništa polovično u biblioteci. Izvedeno za neupisivu mapu (filter `upload_dir` s greškom; jedinični i integracijski test); pun disk usred premještanja je poznata praznina |
 
 ## 6. `POST /media` — rezultat i idempotentnost
 
@@ -154,10 +154,11 @@ Zahtjev: `multipart/form-data`, polje datoteke `file`, neobavezno `title`, `alt`
 | H2.43 | Isti `client_upload_id`, ista datoteka, drugi `title` / `alt` | 200, postojeća stavka **nepromijenjena** (ponavljanje ne uređuje) |
 | H2.44 | Ista datoteka, novi `client_upload_id` | 201, nova slika (WordPress imenu dodaje `-1`); to je namjerno — duplikate po sadržaju plugin ne sprječava |
 | H2.45 | Slika prenesena pa trajno obrisana u adminu, zatim isti `client_upload_id` | 201, nova slika (odluka P13) |
-| H2.46 | Slika prenesena pa premještena u smeće (ako trgovina koristi smeće za medije), zatim isti `client_upload_id` | prema odluci P13 |
+| H2.46 | Slika prenesena pa premještena u smeće (ako trgovina koristi smeće za medije), zatim isti `client_upload_id` | prema odluci P13. **Poznata praznina:** stvarnim HTTP-om nije izvedeno (vidi „Poznate praznine”) |
 | H2.47 | Prekid usred prijenosa pa ponovni zahtjev (stvarni Bulkbirdov slučaj): veza prekinuta nakon što je server spremio sliku, a prije nego što je klijent dobio odgovor | ponovni zahtjev vraća 200 i istu stavku |
 | H2.48 | `GET /media?search=<ime>` nakon prijenosa | nova slika je u popisu; `X-WP-Total` veći za 1 |
 | H2.49 | `/info` | `features` sadrži `media.read` i `media.upload`; `plugin_version` = `0.2.0` |
+| H2.69 | Stvaranje privitka padne nakon što je datoteka već premještena u mapu za prijenose (lažni kvar) | 500 `bulkbird_upload_failed`; netom spremljena datoteka ne ostaje; nijedna druga datoteka ni privitak nisu obrisani (odluka P22) |
 | H2.50 | Plugin ništa ne briše | nakon svih testova nijedan raniji privitak nije obrisan ni izmijenjen (usporedba broja i najvećeg `modified_gmt` ranijih privitaka) |
 | H2.51 | Log | u `wp-debug.log` nema imena datoteka, sadržaja zahtjeva ni ključeva; greške samo s kodom |
 | H2.52 | Zaglavlja | `Cache-Control: no-store`; 201 nosi `Location` na stavku ako se uvede `GET /media/<id>` (odluka P14) |
@@ -241,3 +242,15 @@ Testni podaci: prijenosi u testovima stvaraju stvarne privitke na testnim strani
 | P18 | Prozor ograničenja | fiksni prozor od 60 s |
 | P19 | Ograničenja | 120 zahtjeva / 30 prijenosa u minuti; filter `bulkbird_helper_rate_limits` |
 | P20 | Mjerni mu-plugin | traži se odobrenje kad dođe red |
+| P21 | Brojač učestalosti koji se ne može spremiti | zahtjev **prolazi nebrojen** (prihvatio vlasnik 15. 11. 2026.): kvar brojača ne smije srušiti sinkronizaciju |
+| P22 | Brisanje datoteka u kodu plugina | **jedino dopušteno** (prihvatio vlasnik 15. 11. 2026.): kad stvaranje privitka padne nakon premještanja, plugin uklanja svoju netom spremljenu datoteku; ništa postojeće se ne briše (H2.69) |
+
+## Poznate praznine (stanje 15. 11. 2026.)
+
+| Scenarij | Što nije izvedeno | Razlog | Što ga ipak pokriva |
+|---|---|---|---|
+| H2.13 | prekinut prijenos (`UPLOAD_ERR_PARTIAL`) | PHP taj kôd postavlja sam, samo kad se veza prekine usred tijela zahtjeva; kroz Cloudflare i nginx (koji tijelo najprije prime cijelo) to se ne može pouzdano izazvati, a u CI-ju nema stvarnog prijenosa | grana u kodu je jedna usporedba koja vraća 400 prije ikakvog spremanja; pregledana ručno |
+| H2.30 (dio) | pun disk usred premještanja datoteke | disk testnih stranica se ne smije puniti; premještanje radi WordPress (`wp_handle_upload`), a PHP u testu ne prihvaća datoteku koja nije stigla HTTP-om | neupisiva mapa je izvedena lažnim kvarom; svaka greška premještanja ide istim putem u 500 bez pojedinosti (jedinični test) |
+| H2.46 | slika u smeću, zatim isti `client_upload_id`, stvarnim HTTP-om | nijedna testna stranica ne koristi smeće za medije (`MEDIA_TRASH`), a uključuje se samo u `wp-config.php`, koji se ne mijenja bez vlasnika | odluku (409 `bulkbird_upload_trashed`) pokriva jedinični test pravila `decide()` |
+| H2.67 | upit po stavci, kao namjerni kvar | kvarovi se lokalno provjeravaju jediničnim testovima, a broj upita se vidi samo u stvarnom WordPressu | integracijski test H1.43 u CI-ju |
+| POST `/media` u CI-ju | cijeli tok prijenosa unutar integracijskih testova | PHP prihvaća samo datoteke koje su stvarno stigle HTTP-om | testovi stvarnim HTTP-om na obje stranice (poglavlje DMedia), pojedini koraci integracijski |

@@ -244,4 +244,18 @@ return array(
 		"'pattern'           => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',",
 		"'pattern'           => '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',",
 	),
+	array(
+		'H2.69',
+		'kad stvaranje privitka padne, netom spremljena datoteka ostaje na disku',
+		'includes/class-media-controller.php',
+		"wp_delete_file( \$moved['file'] );",
+		'',
+	),
+	array(
+		'H2.30',
+		'neupisiva mapa za prijenose se ne provjerava prije premještanja',
+		'includes/class-media-controller.php',
+		"if ( ! empty( \$uploads['error'] ) ) {",
+		'if ( false ) {',
+	),
 );
