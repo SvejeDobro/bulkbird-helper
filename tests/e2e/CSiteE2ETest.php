@@ -84,6 +84,8 @@ final class CSiteE2ETest extends E2ECase {
 				'before_woocommerce_init',
 				'rest_api_init',
 				'rest_post_dispatch',
+				// Od 0.2.1; kao i rest_post_dispatch, dodaje se samo na REST zahtjevima (unutar rest_api_init).
+				'rest_request_before_callbacks',
 				'woocommerce_rest_is_request_to_rest_api',
 				'woocommerce_system_status_report',
 			),
