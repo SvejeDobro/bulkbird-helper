@@ -47,6 +47,9 @@ defined( 'ABSPATH' ) || exit;
 				'plugin_files'   => $plugin_files,
 				'php_ms'         => round( ( microtime( true ) - (float) $_SERVER['REQUEST_TIME_FLOAT'] ) * 1000, 2 ),
 				'logged_in'      => function_exists( 'is_user_logged_in' ) && is_user_logged_in(),
+				'opcache'        => (bool) ini_get( 'opcache.enable' ),
+				'main_cached'    => function_exists( 'opcache_is_script_cached' ) && defined( 'WP_PLUGIN_DIR' ) && opcache_is_script_cached( WP_PLUGIN_DIR . '/bulkbird-helper/bulkbird-helper.php' ),
+				'sapi'           => PHP_SAPI,
 			);
 
 			@file_put_contents( $log, json_encode( $line ) . "\n", FILE_APPEND | LOCK_EX ); // phpcs:ignore

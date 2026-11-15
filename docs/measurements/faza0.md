@@ -83,3 +83,79 @@ Rezultat po scenarijima:
 
 Vrijeme kroz Cloudflare prije aktivacije (samo zapis): neprijavljen 175–189 ms, Shop manager 209–261 ms,
 `wc/v3/products` 140–144 ms.
+
+## Ponovljeno mjerenje izmjeničnim redoslijedom (15. 11. 2026.)
+
+Svrha: isključiti pomak opterećenja servera kao uzrok razlike od 2–4 ms iz prvog mjerenja na teststore1 i
+potvrditi `0.1.0-rc.2` na staroj stranici. Redoslijed na obje stranice: **neaktivan, aktivan, neaktivan,
+aktivan, neaktivan, aktivan** (tri para), 30 zahtjeva po stranici u svakom koraku, plugin `0.1.0-rc.2`.
+Plugin je između koraka deaktiviran i aktiviran kroz WP-CLI; na kraju je ostao aktivan. Mjerni mu-plugin je
+nakon mjerenja uklonjen.
+
+**OPcache:** uključen za PHP-FPM obje stranice (`opcache.enable=1`, `validate_timestamps=1`,
+`revalidate_freq=2`, 768 MB; JIT isključen na 8.3). Mjerni mu-plugin je to potvrdio na svakom od 2700
+zahtjeva (`opcache.enable` = da, glavna datoteka plugina u cacheu, SAPI `fpm-fcgi`).
+
+### Vrijeme PHP-a (medijan od 30 zahtjeva, ms)
+
+teststore1 (WordPress 7.1.4, WooCommerce 11.3.0, PHP 8.3):
+
+| Stranica | Tko | Neaktivan (1 / 2 / 3) | Aktivan (1 / 2 / 3) | Prosjek neaktivan | Prosjek aktivan | Razlika |
+|---|---|---|---|---|---|---|
+| Naslovnica | neprijavljen | 117,2 / 117,5 / 117,0 | 116,5 / 117,3 / 116,9 | 117,2 | 116,9 | −0,3 |
+| Naslovnica | Shop manager | 149,5 / 147,4 / 147,2 | 146,4 / 145,3 / 146,4 | 148,0 | 146,1 | −2,0 |
+| Trgovina | neprijavljen | 116,8 / 117,5 / 117,4 | 115,9 / 117,4 / 117,4 | 117,2 | 116,9 | −0,3 |
+| Trgovina | Shop manager | 146,7 / 146,8 / 145,6 | 147,9 / 148,2 / 147,3 | 146,4 | 147,8 | +1,4 |
+| Proizvod | neprijavljen | 115,3 / 113,0 / 112,4 | 111,7 / 111,7 / 110,2 | 113,6 | 111,2 | −2,4 |
+| Proizvod | Shop manager | 189,6 / 189,3 / 191,4 | 191,7 / 189,0 / 188,1 | 190,1 | 189,6 | −0,5 |
+| Košarica | neprijavljen | 114,8 / 113,3 / 114,1 | 116,6 / 114,1 / 113,4 | 114,1 | 114,7 | +0,7 |
+| Košarica | Shop manager | 166,6 / 165,4 / 169,8 | 168,9 / 165,3 / 163,3 | 167,3 | 165,8 | −1,5 |
+| `GET /wc/v3/products` | ključ | 83,8 / 83,1 / 83,1 | 82,9 / 80,5 / 80,6 | 83,3 | 81,3 | −2,0 |
+| `GET /bulkbird/v1/info` | ključ | — | 97,7 / 97,5 / 96,6 | — | 97,3 | — |
+
+Stara stranica (WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1), neprijavljen posjetitelj:
+
+| Stranica | Neaktivan (1 / 2 / 3) | Aktivan (1 / 2 / 3) | Prosjek neaktivan | Prosjek aktivan | Razlika |
+|---|---|---|---|---|---|
+| Naslovnica | 137,5 / 134,0 / 144,4 | 136,6 / 137,1 / 145,3 | 138,7 | 139,7 | +1,0 |
+| Trgovina | 135,8 / 135,3 / 143,8 | 137,0 / 141,5 / 138,9 | 138,3 | 139,1 | +0,8 |
+| Proizvod | 166,1 / 164,1 / 175,8 | 165,1 / 168,4 / 166,6 | 168,6 | 166,7 | −1,9 |
+| Košarica | 99,0 / 96,6 / 102,9 | 98,9 / 100,0 / 100,0 | 99,5 | 99,6 | +0,1 |
+| `GET /wc/v3/products` (ključ) | 134,8 / 133,3 / 141,9 | 136,5 / 134,9 / 136,5 | 136,7 | 136,0 | −0,7 |
+| `GET /bulkbird/v1/info` (ključ) | — | 127,6 / 130,5 / 128,1 | — | 128,7 | — |
+
+**Zaključak (H0.57).** Razlika aktivan − neaktivan je između −2,4 i +1,4 ms, s oba predznaka (na teststore1
+je u šest od devet redaka aktivan plugin „brži”). Razlika među mjerenjima istog stanja je veća (do 11 ms na
+staroj stranici). Dosljedne razlike iznad šuma nema; pomak od 2–4 ms iz prvog mjerenja bio je pomak
+opterećenja servera. Glavnu datoteku plugina zato ne treba mijenjati.
+
+### Učitane datoteke
+
+| Stranica | Stranice za kupce, aktivan | `GET /wc/v3/products`, aktivan | `GET /bulkbird/v1/info` |
+|---|---|---|---|
+| teststore1 | samo `bulkbird-helper.php` (+1) | samo `bulkbird-helper.php` (+1) | glavna + 3 |
+| stara stranica | samo `bulkbird-helper.php` (+1) | samo `bulkbird-helper.php` (+1) | glavna + 3 |
+
+Time je `0.1.0-rc.2` potvrđen i na staroj stranici (H0.59): tuđi REST zahtjev učitava samo glavnu datoteku.
+
+### Broj upita — nalaz koji nije od plugina, ali ga treba znati
+
+Uz **svaku** deaktivaciju ili aktivaciju plugina (bilo kojeg) trgovina neko vrijeme radi oko 8 upita i oko
+20 PHP datoteka više po zahtjevu, i to jednako kad je Bulkbird Helper neaktivan (tada se njegov kod uopće ne
+učitava) i kad je aktivan:
+
+- stara stranica: proizvod 139 upita u mirnom stanju; 147 u parovima 1 i 3 (i neaktivan i aktivan), 139 u
+  paru 2 (i neaktivan i aktivan); isti obrazac na naslovnici (136 / 144) i `wc/v3/products` (83 / 91);
+- teststore1: proizvod 51 upit u mirnom stanju i u svim koracima „aktivan”, 59 u svim koracima „neaktivan”;
+  naslovnica 54 u mirnom stanju, 61–62 u svim koracima izmjeničnog mjerenja (i neaktivan i aktivan).
+
+Unutar istog stanja broj upita je stalan, a razlika ne prati to je li naš plugin učitan, nego koliko je
+vremena prošlo od zadnjeg prebacivanja. Vjerojatan uzrok: WordPress i WooCommerce pri aktivaciji i
+deaktivaciji bilo kojeg plugina prazne vlastite cacheve (popis pluginova, WooCommerce brojači proizvoda i
+narudžbi, podaci o kompatibilnosti pluginova, podaci za blokove) i neko ih vrijeme ponovno grade. **To nije
+potvrđeno popisom samih upita** (mjerni mu-plugin bilježi samo broj). Ako treba dokaz, u sljedećem mjerenju
+mu-plugin može zabilježiti i tekst upita.
+
+Za ocjenu plugina vrijedi prvo mjerenje (mirno stanje prije aktivacije i mirno stanje nakon nje): 0 dodatnih
+upita. Izmjenično mjerenje to ne dovodi u pitanje, ali pokazuje da se broj upita ne smije uspoređivati
+neposredno nakon prebacivanja plugina.
