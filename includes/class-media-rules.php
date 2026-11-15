@@ -188,6 +188,47 @@ final class Media_Rules {
 	}
 
 	/**
+	 * State reported by GET /media/uploads/<client_upload_id>. Pure function.
+	 *
+	 * A request that is still running wins over what is already stored: the attachment
+	 * exists before its sizes are generated, and the client should wait for the end.
+	 *
+	 * @param array{status: string}|null $existing Attachment carrying this upload id, if any.
+	 * @param bool                       $locked   Whether an upload with this id is running right now.
+	 * @return string "in_progress", "trashed", "stored" or "missing".
+	 */
+	public static function upload_state( ?array $existing, bool $locked ): string {
+		if ( $locked ) {
+			return 'in_progress';
+		}
+		if ( null === $existing ) {
+			return 'missing';
+		}
+
+		return 'trash' === $existing['status'] ? 'trashed' : 'stored';
+	}
+
+	/**
+	 * Body of the upload status response. Pure function.
+	 *
+	 * @param string                    $upload_id Normalised client upload id.
+	 * @param string                    $state     "in_progress", "trashed" or "stored".
+	 * @param string                    $sha256    Stored hash; empty when unknown.
+	 * @param array<string, mixed>|null $item      Item as in GET /media, for "stored".
+	 * @return array{client_upload_id: string, state: string, sha256: string|null, item: array<string, mixed>|null}
+	 */
+	public static function upload_status_body( string $upload_id, string $state, string $sha256, ?array $item ): array {
+		$known = 'in_progress' !== $state && 1 === preg_match( '/^[0-9a-f]{64}$/', $sha256 );
+
+		return array(
+			'client_upload_id' => $upload_id,
+			'state'            => $state,
+			'sha256'           => $known ? $sha256 : null,
+			'item'             => 'stored' === $state ? $item : null,
+		);
+	}
+
+	/**
 	 * Arguments for the new attachment. Never attached to a product or any other post.
 	 *
 	 * @param string $title    Title.

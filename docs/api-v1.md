@@ -5,11 +5,12 @@ Faza 0 (`/info`, autentikacija) je potvrđena stvarnim HTTP zahtjevima na obje t
 WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
 **Poglavlja 6–8 (`/media`, ograničenje učestalosti) — konačno, verzija `0.2.0`** (odluke vlasnika 15. 11. 2026.); potvrđena
 stvarnim HTTP zahtjevima na obje testne stranice.
+**Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.2.1` (faza 0: `/info`; faze 1 i 2: `/media`)
+- Verzija plugina: `0.3.0` (faza 0: `/info`; faze 1 i 2: `/media`; `0.3.0`: stanje prijenosa)
 - **Ugovor je isti od `0.2.0`.** `0.2.1` mijenja samo redoslijed provjere: zahtjev bez prijave ili korisnika
   bez prava dobiva 401 odnosno 403 i kad mu je neki parametar neispravan (u `0.2.0` je tada dobivao 400).
   Kodovi i statusi se ne mijenjaju; tko smije, za neispravan parametar i dalje dobiva 400.
@@ -76,7 +77,7 @@ Ne upisuje ništa u bazu.
 |---|---|---|
 | `plugin_version` | tekst | verzija plugina (SemVer), npr. `0.1.0` |
 | `api_version` | cijeli broj | `1`; mijenja se samo pri nekompatibilnoj promjeni |
-| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. Slijede: `changes` (faza 3), `sales` (faza 4) |
+| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. Slijede: `changes` (faza 3), `sales` (faza 4) |
 | `wordpress_version` | tekst | npr. `7.1.4` |
 | `woocommerce_version` | tekst | npr. `11.3.0` |
 | `php_version` | tekst | `glavna.sporedna.izdanje`, bez dodataka distribucije, npr. `8.3.36` |
@@ -100,7 +101,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 
 ```json
 {
-    "plugin_version": "0.2.1",
+    "plugin_version": "0.3.0",
     "api_version": 1,
     "features": ["media.read", "media.upload"],
     "wordpress_version": "7.1.4",
@@ -255,7 +256,57 @@ zaštita trgovine od pretjeranog prometa, ne sigurnosna granica; provjere ključ
 Zahtjevi bez prijave (401) i zahtjevi korisnika bez prava (403) se ne broje. Trgovina može promijeniti
 ograničenja filterom `bulkbird_helper_rate_limits`, pa se Bulkbird oslanja na `Retry-After`, ne na brojke.
 
-## 9. Odobrene razlike prema prvoj inačici specifikacije
+## 9. `GET /bulkbird/v1/media/uploads/<client_upload_id>` (od `0.3.0`; `features` sadrži `media.upload_status`)
+
+Provjera ishoda prijenosa čitanjem, bez ponovnog slanja datoteke. Namjena: veza se prekinula prije
+odgovora na `POST /media`, klijent se srušio usred niza prijenosa ili je odgovor bio nejasan (413 bez
+JSON-a, 502, 504, istek vremena).
+
+- Sposobnosti kao `GET /media`: `upload_files` **i** `manage_woocommerce`. Radi i s ključem **samo za čitanje**.
+- Ne mijenja ništa u trgovini i ne čeka prijenos koji traje.
+- `<client_upload_id>` je UUID, bez razlike velikih i malih slova (isto pravilo kao u `POST /media`).
+  U odgovoru je uvijek malim slovima.
+- Vidi samo slike prenesene kroz `POST /media` (one imaju `client_upload_id`).
+- **Ograničenje učestalosti:** broji se u 120 zahtjeva u minuti, **ne broji se u 30 prijenosa**.
+- Otkrivanje: prije poziva pogledati `features` u `/info`. Na trgovini s pluginom starijim od `0.3.0`
+  putanja ne postoji i WordPress vraća 404 `rest_no_route`.
+
+Odgovor 200:
+
+| Polje | Vrsta | Značenje |
+|---|---|---|
+| `client_upload_id` | tekst | traženi ID, malim slovima |
+| `state` | tekst | `stored`, `trashed` ili `in_progress` |
+| `sha256` | tekst ili `null` | SHA-256 spremljene datoteke (64 heksadecimalna znaka, mala slova). `null` uz `in_progress` i ako sažetak nije zabilježen |
+| `item` | objekt ili `null` | uz `stored`: stavka, ista kao u `GET /media` i u odgovoru na `POST /media`. Inače `null` |
+
+| `state` | Značenje | Što klijent radi |
+|---|---|---|
+| `stored` | slika s tim `client_upload_id` postoji | usporedi `sha256` sa svojom datotekom. Jednak: prijenos je uspio, koristi `item.id`. Različit: taj je ID već upotrijebljen za drugu datoteku (`POST` bi vratio 409 `bulkbird_upload_id_conflict`); treba novi `client_upload_id` |
+| `trashed` | slika postoji, ali je u smeću | `POST` s tim ID-jem bi vratio 409 `bulkbird_upload_trashed`. Čitanje se ne odbija: odgovor je 200 |
+| `in_progress` | zahtjev `POST` s tim ID-jem upravo traje | pričekati i ponoviti provjeru; odgovor nosi zaglavlje `Retry-After: 5` |
+
+`in_progress` ima prednost pred ostalim stanjima: privitak nastaje prije nego što su umanjene slike gotove,
+pa dok zahtjev traje odgovor nije `stored`.
+
+| Slučaj | HTTP | `code` |
+|---|---|---|
+| trgovina nema sliku s tim `client_upload_id` (nikad spremljena ili trajno obrisana) | 404 | `bulkbird_upload_not_found` |
+| `client_upload_id` nije UUID | 400 | `rest_invalid_param` |
+| bez prijave / bez prava | 401 / 403 | kao u poglavlju 3 (imaju prednost pred 400) |
+| previše zahtjeva | 429 | `bulkbird_rate_limited` |
+| druga metoda (`POST`, `PUT`, `PATCH`, `DELETE`) | 404 | `rest_no_route` |
+
+404 `bulkbird_upload_not_found` znači da će `POST /media` s tim `client_upload_id` stvoriti sliku.
+Klijent razlikuje dva moguća 404 po polju `code`.
+
+Primjeri odgovora: `fixtures/v1/media-upload-status-stored.json`, `-trashed.json`, `-in-progress.json`,
+`-not-found.json`.
+
+Nije dio `0.3.0` (odluke vlasnika 15. 11. 2026.): skupna provjera više ID-jeva odjednom i izmjena naslova ili
+alternativnog teksta (`PATCH /media/<id>`); opisane su samo u `docs/proposals/0.3.0-client-upload-id.md`.
+
+## 10. Odobrene razlike prema prvoj inačici specifikacije
 
 Odobrio vlasnik projekta 15. 11. 2026.; `docs/spec-v1.md` je usklađen.
 

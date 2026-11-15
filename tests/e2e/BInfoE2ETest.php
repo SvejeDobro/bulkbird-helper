@@ -62,7 +62,11 @@ final class BInfoE2ETest extends E2ECase {
 
 	public function test_h2_49_features_and_media_capabilities(): void {
 		$info = self::info()['json'];
-		self::assertSame( array( 'media.read', 'media.upload' ), $info['features'] );
+		$features = array( 'media.read', 'media.upload' );
+		if ( version_compare( $info['plugin_version'], '0.3.0', '>=' ) ) {
+			$features[] = 'media.upload_status'; // H2.71.
+		}
+		self::assertSame( $features, $info['features'] );
 		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $info['media'] ) );
 		self::assertSame( min( $info['max_upload_bytes'], 20971520 ), $info['media']['upload_max_bytes'] );
 		foreach ( array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ) as $mime ) {

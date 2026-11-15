@@ -517,6 +517,44 @@ final class DMediaE2ETest extends E2ECase {
 		self::assertSame( $total, self::total() );
 	}
 
+	// --- GET /media/uploads/<client_upload_id> (0.3.0; H2.71–H2.79) ------------------------------
+
+	public function test_h2_72_to_h2_78_upload_status_by_reading(): void {
+		if ( version_compare( (string) self::site()['plugin_version'], '0.3.0', '<' ) ) {
+			self::markTestSkipped( 'Na stranici je plugin stariji od 0.3.0.' );
+		}
+		$status = static fn( string $id, string $key = 'K_READ' ): array => self::http( 'GET', self::url( self::MEDIA . '/uploads/' . $id ), array( 'basic' => self::key( $key ) ) );
+
+		$id   = self::uuid();
+		$file = self::image( 'jpeg', 640, 480 );
+
+		// Prije prijenosa: 404 vlastitim kodom (ne "nema putanje").
+		self::assert_error( $status( $id ), 404, 'bulkbird_upload_not_found' );
+
+		$created = self::post( $file, 'bbh-test-stanje.jpg', array( 'client_upload_id' => $id, 'title' => 'bbh-test-stanje' ) );
+		self::assertSame( 201, $created['status'], self::describe( $created ) );
+		$total = self::total();
+
+		// Ključ samo za čitanje smije provjeriti ishod.
+		$stored = $status( $id );
+		self::assertSame( 200, $stored['status'], self::describe( $stored ) );
+		self::assertSame( array( 'client_upload_id', 'state', 'sha256', 'item' ), array_keys( $stored['json'] ) );
+		self::assertSame( array( $id, 'stored', hash_file( 'sha256', $file ) ), array( $stored['json']['client_upload_id'], $stored['json']['state'], $stored['json']['sha256'] ) );
+		self::assertSame( $created['json'], $stored['json']['item'], 'ista stavka kao u odgovoru na POST' );
+		self::assertMatchesRegularExpression( '/no-store|no-cache/', $stored['headers']['cache-control'] ?? '' );
+		self::assertSame( $stored['json'], $status( strtoupper( $id ) )['json'], 'velika slova' );
+
+		// Dozvole i neispravan ID.
+		self::assert_error( self::http( 'GET', self::url( self::MEDIA . '/uploads/' . $id ) ), 401, 'bulkbird_unauthorized' );
+		self::assert_error( $status( $id, 'K_CUST' ), 403, 'bulkbird_forbidden' );
+		self::assert_error( $status( 'abc' ), 400, 'rest_invalid_param' );
+		self::assert_error( self::http( 'GET', self::url( self::MEDIA . '/uploads/abc' ) ), 401, 'bulkbird_unauthorized' );
+
+		// Čitanje ništa ne mijenja.
+		self::assertSame( $total, self::total() );
+		self::assertSame( $created['json']['modified_gmt'], $status( $id )['json']['item']['modified_gmt'] );
+	}
+
 	// --- POST /media: istovremeni zahtjevi (H2.41) ---------------------------------------------
 
 	public function test_h2_41_two_simultaneous_requests_with_the_same_upload_id(): void {

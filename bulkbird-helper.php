@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.2.1
+ * Version:              0.3.0
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.2.1';
+const VERSION           = '0.3.0';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -239,6 +239,27 @@ function register_rest_routes(): void {
 		)
 	);
 
+	register_rest_route(
+		REST_NAMESPACE,
+		// Any single path segment is matched, so that a malformed id is answered with 400, not with "no route".
+		'/media/uploads/(?P<client_upload_id>[^/]+)',
+		array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => __NAMESPACE__ . '\\rest_get_upload_status',
+				'permission_callback' => __NAMESPACE__ . '\\rest_can_read_media',
+				'args'                => array(
+					'client_upload_id' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'pattern'           => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+				),
+			),
+		)
+	);
+
 	add_filter( 'rest_post_dispatch', __NAMESPACE__ . '\\finish_own_responses', 10, 3 );
 	add_filter( 'rest_request_before_callbacks', __NAMESPACE__ . '\\auth_errors_first', 10, 3 );
 }
@@ -397,6 +418,18 @@ function rest_list_media( \WP_REST_Request $request ) {
 	load_media_classes();
 
 	return ( new Media_Controller() )->list_items( $request );
+}
+
+/**
+ * GET /media/uploads/<client_upload_id>
+ *
+ * @param \WP_REST_Request $request Request.
+ * @return \WP_REST_Response|\WP_Error
+ */
+function rest_get_upload_status( \WP_REST_Request $request ) {
+	load_media_classes();
+
+	return ( new Media_Controller() )->upload_status( $request );
 }
 
 /**
