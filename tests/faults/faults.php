@@ -241,8 +241,8 @@ return array(
 		'H2.11',
 		'client_upload_id velikim slovima se odbija',
 		'bulkbird-helper.php',
-		"'pattern'           => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',",
-		"'pattern'           => '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',",
+		"must not matter.\n						'pattern'           => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',",
+		"must not matter.\n						'pattern'           => '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',",
 	),
 	array(
 		'H2.69',
