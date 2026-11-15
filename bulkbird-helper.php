@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.2.0
+ * Version:              0.2.1
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.2.0';
+const VERSION           = '0.2.1';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -240,8 +240,39 @@ function register_rest_routes(): void {
 	);
 
 	add_filter( 'rest_post_dispatch', __NAMESPACE__ . '\\finish_own_responses', 10, 3 );
+	add_filter( 'rest_request_before_callbacks', __NAMESPACE__ . '\\auth_errors_first', 10, 3 );
 }
 add_action( 'rest_api_init', __NAMESPACE__ . '\\register_rest_routes' );
+
+/**
+ * Lets "not signed in" and "not allowed" win over "invalid parameter".
+ *
+ * WordPress validates the parameters of a route before it asks the route's permission
+ * callback, so an anonymous or unprivileged caller with a malformed parameter would be
+ * told 400 instead of 401 or 403. For this plugin's routes the permission callback is
+ * asked first in that case; its verdict (401, 403 or 429) replaces the parameter error.
+ * A caller who is allowed still gets the parameter error unchanged.
+ *
+ * @param mixed $response Result so far: a parameter error, or anything else.
+ * @param mixed $handler  Matched route handler.
+ * @param mixed $request  Request.
+ * @return mixed
+ */
+function auth_errors_first( $response, $handler, $request ) {
+	if ( ! $response instanceof \WP_Error || ! $request instanceof \WP_REST_Request || ! is_own_route( $request->get_route() ) ) {
+		return $response;
+	}
+	if ( ! in_array( $response->get_error_code(), array( 'rest_invalid_param', 'rest_missing_callback_param' ), true ) ) {
+		return $response;
+	}
+	if ( ! is_array( $handler ) || empty( $handler['permission_callback'] ) || ! is_callable( $handler['permission_callback'] ) ) {
+		return $response;
+	}
+
+	$allowed = call_user_func( $handler['permission_callback'], $request );
+
+	return $allowed instanceof \WP_Error ? $allowed : $response;
+}
 
 /**
  * Loads the classes behind the REST routes. Called only from the route callbacks.

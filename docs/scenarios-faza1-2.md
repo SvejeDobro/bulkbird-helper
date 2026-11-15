@@ -43,7 +43,7 @@ Sve što se u scenarijima naziva „stavka” ima točno ova polja (specifikacij
 | H1.5 | K-CUST (korisnik bez `upload_files` i bez `manage_woocommerce`) | 403 `bulkbird_forbidden` |
 | H1.6 | Kolačić Shop managera + nonce | 200; bez noncea 401 |
 | H1.7 | Korisnik s `upload_files`, ali bez `manage_woocommerce` (uloga Author; integracijski test) | **403** `bulkbird_forbidden` za `GET` i za `POST` (odluka P1: traže se obje sposobnosti) |
-| H1.8 | Ključ u adresi (`consumer_key`…) i oblik `?rest_route=/bulkbird/v1/media` | 200, isti rezultat |
+| H1.8 | Ključ u adresi (`consumer_key`…) i oblik `?rest_route=/bulkbird/v1/media` | 200, isti rezultat. Dio „ključ u adresi” se od 16. 11. 2026. stvarnim HTTP-om ne izvodi (pravilo vlasnika; zadnji put potvrđeno 15. 11. 2026.) |
 | H1.9 | Greške | WordPress oblik (`code`, `message`, `data.status`), bez putanja na disku |
 
 ## 2. `GET /media` — sadržaj, paginacija, pretraga
@@ -159,6 +159,7 @@ Zahtjev: `multipart/form-data`, polje datoteke `file`, neobavezno `title`, `alt`
 | H2.48 | `GET /media?search=<ime>` nakon prijenosa | nova slika je u popisu; `X-WP-Total` veći za 1 |
 | H2.49 | `/info` | `features` sadrži `media.read` i `media.upload`; `plugin_version` = `0.2.0` |
 | H2.69 | Stvaranje privitka padne nakon što je datoteka već premještena u mapu za prijenose (lažni kvar) | 500 `bulkbird_upload_failed`; netom spremljena datoteka ne ostaje; nijedna druga datoteka ni privitak nisu obrisani (odluka P22) |
+| H2.70 | (`0.2.1`) Zahtjev bez prijave ili korisnika bez prava, s neispravnim parametrom (`client_upload_id=abc`, `per_page=abc`) | 401 odnosno 403, ne 400; tko smije i dalje dobiva 400 `rest_invalid_param`; tuđe putanje nepromijenjene; zahtjev se i dalje broji jednom |
 | H2.50 | Plugin ništa ne briše | nakon svih testova nijedan raniji privitak nije obrisan ni izmijenjen (usporedba broja i najvećeg `modified_gmt` ranijih privitaka) |
 | H2.51 | Log | u `wp-debug.log` nema imena datoteka, sadržaja zahtjeva ni ključeva; greške samo s kodom |
 | H2.52 | Zaglavlja | `Cache-Control: no-store`; 201 nosi `Location` na stavku ako se uvede `GET /media/<id>` (odluka P14) |

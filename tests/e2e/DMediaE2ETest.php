@@ -120,15 +120,27 @@ final class DMediaE2ETest extends E2ECase {
 		self::assert_error( self::http( 'GET', self::url( self::MEDIA ), array( 'headers' => array( 'Cookie: ' . $session['cookie'] ) ) ), 401, 'bulkbird_unauthorized' );
 	}
 
-	public function test_h1_8_key_in_url_and_rest_route_form(): void {
-		list( $ck, $cs ) = self::key( 'K_READ' );
-		$direct          = self::get( '?per_page=3' );
-		$in_url          = self::http( 'GET', self::url( self::MEDIA . '?per_page=3&consumer_key=' . rawurlencode( $ck ) . '&consumer_secret=' . rawurlencode( $cs ) ) );
-		$rest_route      = self::http( 'GET', self::url( '/?rest_route=/bulkbird/v1/media&per_page=3' ), array( 'basic' => self::key( 'K_READ' ) ) );
-		self::assertSame( 200, $in_url['status'] );
+	public function test_h1_8_rest_route_form(): void {
+		// Ključ u adresi se stvarnim HTTP-om više ne izvodi (secret bi ostao u zapisima poslužitelja).
+		$direct     = self::get( '?per_page=3' );
+		$rest_route = self::http( 'GET', self::url( '/?rest_route=/bulkbird/v1/media&per_page=3' ), array( 'basic' => self::key( 'K_READ' ) ) );
 		self::assertSame( 200, $rest_route['status'], self::describe( $rest_route ) );
-		self::assertSame( $direct['json'], $in_url['json'] );
 		self::assertSame( $direct['json'], $rest_route['json'] );
+	}
+
+	public function test_h2_70_not_signed_in_or_not_allowed_wins_over_an_invalid_parameter(): void {
+		if ( version_compare( (string) self::site()['plugin_version'], '0.2.1', '<' ) ) {
+			self::markTestSkipped( 'Na stranici je plugin stariji od 0.2.1.' );
+		}
+		$bad_post = array( 'body' => array( 'client_upload_id' => 'abc' ) );
+		self::assert_error( self::http( 'POST', self::url( self::MEDIA ), $bad_post ), 401, 'bulkbird_unauthorized' );
+		self::assert_error( self::http( 'POST', self::url( self::MEDIA ), $bad_post + array( 'basic' => self::key( 'K_CUST' ) ) ), 403, 'bulkbird_forbidden' );
+		self::assert_error( self::http( 'POST', self::url( self::MEDIA ), $bad_post + array( 'basic' => self::key( 'K_READ' ) ) ), 401, 'woocommerce_rest_authentication_error' );
+		self::assertSame( 'rest_invalid_param', self::http( 'POST', self::url( self::MEDIA ), $bad_post + array( 'basic' => self::key( 'K_RW' ) ) )['json']['code'] );
+
+		self::assert_error( self::http( 'GET', self::url( self::MEDIA . '?per_page=abc' ) ), 401, 'bulkbird_unauthorized' );
+		self::assert_error( self::http( 'GET', self::url( self::MEDIA . '?per_page=abc' ), array( 'basic' => self::key( 'K_CUST' ) ) ), 403, 'bulkbird_forbidden' );
+		self::assertSame( 'rest_invalid_param', self::http( 'GET', self::url( self::MEDIA . '?per_page=abc' ), array( 'basic' => self::key( 'K_READ' ) ) )['json']['code'] );
 	}
 
 	// --- GET /media: sadržaj (H1.10–H1.42) ----------------------------------------------------

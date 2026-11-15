@@ -258,4 +258,18 @@ return array(
 		"if ( ! empty( \$uploads['error'] ) ) {",
 		'if ( false ) {',
 	),
+	array(
+		'H2.70a',
+		'neispravan parametar opet ima prednost pred 401/403',
+		'bulkbird-helper.php',
+		'return $allowed instanceof \WP_Error ? $allowed : $response;',
+		'return $response;',
+	),
+	array(
+		'H2.70b',
+		'rana provjera dozvole se primjenjuje i na tuđe putanje',
+		'bulkbird-helper.php',
+		'if ( ! $response instanceof \WP_Error || ! $request instanceof \WP_REST_Request || ! is_own_route( $request->get_route() ) ) {',
+		'if ( ! $response instanceof \WP_Error || ! $request instanceof \WP_REST_Request ) {',
+	),
 );

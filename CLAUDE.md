@@ -47,11 +47,16 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizv
 
 ## Stanje
 
-Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`: `GET` i `POST /media`, ograničenje učestalosti) su izvedene i na
-grani `main` (oznake `v0.1.0`, `v0.2.0`). `0.2.0` je aktivan na obje testne stranice. **Plugin miruje** (odluka vlasnika
-16. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik ne odluči. Bulkbird program koristi `0.2.0` prema
-konačnom ugovoru `docs/api-v1.md`; ugovor se mijenja samo uz odobrenje vlasnika. Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno,
-svaki put i za svaku stranicu.
+Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`) su na grani `main` (oznake `v0.1.0`, `v0.2.0`); `0.2.0` je aktivan na
+obje testne stranice. **Plugin miruje** (odluka vlasnika 16. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik
+ne odluči. Bulkbird program koristi `0.2.0` prema konačnom ugovoru `docs/api-v1.md`; ugovor se mijenja samo
+uz odobrenje vlasnika.
+
+- Grana `paket-0.2.1`: popravak redoslijeda (401/403 prije 400 za neispravan parametar). **Ne tagira se i
+  ne spaja u main dok vlasnik ne odobri**; nije postavljena na stranice.
+- Grana `prijedlog-0.3.0`: samo dokumenti (`docs/proposals/`). Izrada čeka odgovore vlasnika.
+
+Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 
 ## Gdje je što
 
@@ -88,6 +93,16 @@ Testovi, provjere i izrada **nikad se ne ulančavaju tako da sljedeći korak ide
 Primjer greške: oznaka `v0.1.0` od 15. 11. 2026. Naredba `phpunit … | tail -2 && git commit … && git tag …
 && git push` poslala je oznaku iako je phpunit javio 42 greške (kriva naredba, bez bootstrapa). Testovi su
 prošli tek naknadno.
+
+## Ključevi u testovima (pravilo vlasnika, 16. 11. 2026.)
+
+- **Ključ se šalje samo u zaglavlju (Basic), nikad u adresi.** Adresa s `consumer_key` i `consumer_secret`
+  ostaje u zapisu nginxa zajedno sa secretom (dogodilo se 15. 11. 2026. s testnim ključem K_READ).
+- To čuvaju: `TestHygieneTest` (pada ako ijedan test ili alat sastavlja adresu s ključem), provjera u
+  `E2ECase` (takav zahtjev se ne šalje) i `ZLogE2ETest` (secret nijednog testnog ključa nije u zapisu nginxa).
+- Zapise nginxa vodi CloudPanel; ne diraju se.
+- Zamjena testnih ključeva: `tests/tools/rotate-test-keys.py <new|old> K_READ,K_RW` (secret se ne ispisuje).
+- Scenariji H0.3 i dio H1.8 (ključ u adresi) se zato stvarnim HTTP-om više ne izvode.
 
 ## Čvrsta načela plugina (specifikacija, poglavlje 1)
 
