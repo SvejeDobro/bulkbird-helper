@@ -520,6 +520,8 @@ final class DMediaE2ETest extends E2ECase {
 	// --- POST /media: istovremeni zahtjevi (H2.41) ---------------------------------------------
 
 	public function test_h2_41_two_simultaneous_requests_with_the_same_upload_id(): void {
+		// Istovremeni zahtjevi se ne ponavljaju nakon 429, pa test kreće s praznim brojačem prijenosa (30 u minuti).
+		self::wait_for_fresh_rate_window();
 		$total = self::total();
 		$file  = self::image( 'jpeg', 1600, 1200 );
 		$id    = self::uuid();
