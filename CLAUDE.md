@@ -48,7 +48,7 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizv
 ## Stanje
 
 Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`) su na grani `main` (oznake `v0.1.0`, `v0.2.0`); `0.2.0` je aktivan na
-obje testne stranice. **Plugin miruje** (odluka vlasnika 16. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik
+obje testne stranice. **Plugin miruje** (odluka vlasnika 15. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik
 ne odluči. Bulkbird program koristi `0.2.0` prema konačnom ugovoru `docs/api-v1.md`; ugovor se mijenja samo
 uz odobrenje vlasnika.
 
@@ -80,7 +80,7 @@ Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki 
 - Identitet: slug `bulkbird-helper`, namespace `Bulkbird\Helper`, REST `bulkbird/v1`, SemVer, GPLv2+.
 - Commit poruke kratke, na hrvatskom ili engleskom; bez tajni i bez osobnih podataka.
 
-## Koraci koji mogu pasti (pravilo vlasnika, 16. 11. 2026.)
+## Koraci koji mogu pasti (pravilo vlasnika, 15. 11. 2026.)
 
 Testovi, provjere i izrada **nikad se ne ulančavaju tako da sljedeći korak ide i nakon greške**:
 
@@ -94,7 +94,7 @@ Primjer greške: oznaka `v0.1.0` od 15. 11. 2026. Naredba `phpunit … | tail -2
 && git push` poslala je oznaku iako je phpunit javio 42 greške (kriva naredba, bez bootstrapa). Testovi su
 prošli tek naknadno.
 
-## Ključevi u testovima (pravilo vlasnika, 16. 11. 2026.)
+## Ključevi u testovima (pravilo vlasnika, 15. 11. 2026.)
 
 - **Ključ se šalje samo u zaglavlju (Basic), nikad u adresi.** Adresa s `consumer_key` i `consumer_secret`
   ostaje u zapisu nginxa zajedno sa secretom (dogodilo se 15. 11. 2026. s testnim ključem K_READ).

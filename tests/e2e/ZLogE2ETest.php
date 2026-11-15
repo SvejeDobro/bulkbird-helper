@@ -19,7 +19,7 @@ final class ZLogE2ETest extends E2ECase {
 	}
 
 	/**
-	 * Pravilo vlasnika (16. 11. 2026.): ključ se šalje samo u zaglavlju. Ako bi ijedan test poslao ključ
+	 * Pravilo vlasnika (15. 11. 2026.): ključ se šalje samo u zaglavlju. Ako bi ijedan test poslao ključ
 	 * u adresi, secret bi ostao u zapisu nginxa. Traži se samo zadnjih 8 znakova svakog secreta, a
 	 * ispisuje samo broj redaka.
 	 */

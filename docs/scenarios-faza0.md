@@ -50,7 +50,7 @@ Svaki scenarij se izvodi stvarnim HTTP zahtjevom na NOVA i STARA.
 |---|---|---|
 | H0.1 | K-READ u zaglavlju `Authorization: Basic`, `GET /info` | 200, valjan JSON |
 | H0.2 | K-RW u zaglavlju, `GET /info` | 200 |
-| H0.3 | K-READ kao `consumer_key` / `consumer_secret` u adresi, `GET /info` | 200 (isti rezultat kao H0.1). **Od 16. 11. 2026. se stvarnim HTTP-om ne izvodi** (pravilo vlasnika: ključ samo u zaglavlju, jer adresa sa secretom ostaje u zapisu nginxa); zadnji put potvrđeno 15. 11. 2026. na obje stranice s `0.2.0`. Umjesto toga test pada ako ijedan testni zahtjev ima ključ u adresi |
+| H0.3 | K-READ kao `consumer_key` / `consumer_secret` u adresi, `GET /info` | 200 (isti rezultat kao H0.1). **Od 15. 11. 2026. se stvarnim HTTP-om ne izvodi** (pravilo vlasnika: ključ samo u zaglavlju, jer adresa sa secretom ostaje u zapisu nginxa); zadnji put potvrđeno 15. 11. 2026. na obje stranice s `0.2.0`. Umjesto toga test pada ako ijedan testni zahtjev ima ključ u adresi |
 | H0.4 | K-WRITE (samo pisanje), `GET /info` | 401, `woocommerce_rest_authentication_error` (ključ nema dozvolu čitanja) |
 | H0.5 | Ispravan consumer key K-READ, pogrešan secret | 401, `woocommerce_rest_authentication_error` |
 | H0.6 | K-NEPOZNAT (ključ koji ne postoji) | 401, `bulkbird_unauthorized`; tijelo bez ikakvih podataka iz `/info` |

@@ -43,7 +43,7 @@ Sve što se u scenarijima naziva „stavka” ima točno ova polja (specifikacij
 | H1.5 | K-CUST (korisnik bez `upload_files` i bez `manage_woocommerce`) | 403 `bulkbird_forbidden` |
 | H1.6 | Kolačić Shop managera + nonce | 200; bez noncea 401 |
 | H1.7 | Korisnik s `upload_files`, ali bez `manage_woocommerce` (uloga Author; integracijski test) | **403** `bulkbird_forbidden` za `GET` i za `POST` (odluka P1: traže se obje sposobnosti) |
-| H1.8 | Ključ u adresi (`consumer_key`…) i oblik `?rest_route=/bulkbird/v1/media` | 200, isti rezultat. Dio „ključ u adresi” se od 16. 11. 2026. stvarnim HTTP-om ne izvodi (pravilo vlasnika; zadnji put potvrđeno 15. 11. 2026.) |
+| H1.8 | Ključ u adresi (`consumer_key`…) i oblik `?rest_route=/bulkbird/v1/media` | 200, isti rezultat. Dio „ključ u adresi” se od 15. 11. 2026. stvarnim HTTP-om ne izvodi (pravilo vlasnika; zadnji put potvrđeno 15. 11. 2026.) |
 | H1.9 | Greške | WordPress oblik (`code`, `message`, `data.status`), bez putanja na disku |
 
 ## 2. `GET /media` — sadržaj, paginacija, pretraga

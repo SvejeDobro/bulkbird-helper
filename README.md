@@ -8,7 +8,7 @@ Načela: bez sučelja, nula CSS-a i JS-a, nula opterećenja stranica za kupce, n
 bez osobnih podataka u odgovorima, autentikacija postojećim WooCommerce REST ključem.
 
 **Status:** `0.1.0` (faza 0: autentikacija i `GET /info`) i `0.2.0` (faze 1 i 2: `GET` i `POST /media`,
-ograničenje učestalosti) su izvedeni, na grani `main`, s oznakama `v0.1.0` i `v0.2.0`. `0.2.0` je aktivan na
+ograničenje učestalosti) su izvedeni, na grani `main`, s oznakama `v0.1.0` i `v0.2.0`. Tekuća verzija je `0.2.1` (isti ugovor; 401/403 prije 400), aktivna na
 obje testne stranice. Faze 3 i 4 čekaju odluku vlasnika.
 
 Provjere (sve se pokreću i u CI-ju):

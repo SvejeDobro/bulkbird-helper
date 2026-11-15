@@ -1,6 +1,6 @@
 <?php
 /**
- * Pravilo vlasnika (16. 11. 2026.): testni zahtjevi šalju ključ samo u zaglavlju (Basic), nikad u adresi.
+ * Pravilo vlasnika (15. 11. 2026.): testni zahtjevi šalju ključ samo u zaglavlju (Basic), nikad u adresi.
  * Adresa s ključem ostaje u zapisima poslužitelja zajedno sa secretom.
  *
  * Ovaj test pada ako bilo koja testna datoteka ili alat sastavlja adresu s consumer_key / consumer_secret,

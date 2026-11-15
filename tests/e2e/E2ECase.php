@@ -104,7 +104,7 @@ abstract class E2ECase extends TestCase {
 
 	/**
 	 * Ključ se šalje samo u zaglavlju (Basic). Adresa s ključem završava u zapisima poslužitelja,
-	 * zajedno sa secretom, pa se takav zahtjev ne šalje nego test pada (pravilo vlasnika, 16. 11. 2026.).
+	 * zajedno sa secretom, pa se takav zahtjev ne šalje nego test pada (pravilo vlasnika, 15. 11. 2026.).
 	 */
 	protected static function refuse_keys_in_url( string $url ): void {
 		if ( 1 === preg_match( '/consumer_(key|secret)\s*(=|%3D)|\bc[ks]_[0-9a-f]{20,}/i', rawurldecode( $url ) ) ) {
