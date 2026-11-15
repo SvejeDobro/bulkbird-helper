@@ -7,7 +7,7 @@ Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika pr
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina u ovom nacrtu: `0.1.0-rc.2`
+- Verzija plugina u ovom nacrtu: `0.1.0`
 
 ## 1. Otkrivanje
 
@@ -92,7 +92,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 
 ```json
 {
-    "plugin_version": "0.1.0-rc.2",
+    "plugin_version": "0.1.0",
     "api_version": 1,
     "features": [],
     "wordpress_version": "7.1.4",
