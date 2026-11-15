@@ -1,8 +1,8 @@
 # Bulkbird Helper — ugovor API-ja v1
 
 Status: **faza 0 — odobreno** (razlike prema specifikaciji odobrio vlasnik projekta 15. 11. 2026.).
-Potvrđeno stvarnim HTTP zahtjevima na staroj testnoj stranici (WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1);
-potvrda na teststore1 (WordPress 7.1, WooCommerce 11.3, PHP 8.3) slijedi nakon aktivacije plugina.
+Potvrđeno stvarnim HTTP zahtjevima na obje testne stranice: WordPress 6.4.14 / WooCommerce 8.0.3 / PHP 8.1
+i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3 (45 testova na svakoj).
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
@@ -101,17 +101,16 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
     "hpos_enabled": true,
     "timezone": "+00:00",
     "currency": "EUR",
-    "max_upload_bytes": 104857600,
-    "memory_limit": 268435456,
+    "max_upload_bytes": 67108864,
+    "memory_limit": 536870912,
     "max_execution_time": 60,
     "detected_plugins": [],
     "analytics_lookup": "complete"
 }
 ```
 
-Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.old.json` (stara testna stranica) i
-`fixtures/v1/info.new.json` (teststore1; nastaje nakon aktivacije plugina ondje). `fixtures/v1/info.json`
-je kopija primjera s najnovije okoline.
+Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.json` (teststore1, najnovije verzije;
+isti sadržaj kao `fixtures/v1/info.new.json`) i `fixtures/v1/info.old.json` (stara testna stranica).
 
 ## 6. Odobrene razlike prema prvoj inačici specifikacije
 

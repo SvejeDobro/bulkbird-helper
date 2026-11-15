@@ -39,13 +39,47 @@ naslovnica 202 → 197 ms, trgovina 200–203 → 197 ms, košarica 163–165 �
 
 **Napomena uz H0.59.** Mjerenje je pokazalo da `0.1.0-rc.1` na svakom REST zahtjevu (i tuđem) učitava tri
 pomoćne datoteke, bez ijednog upita. U `0.1.0-rc.2` putanje se registriraju samo imenom funkcije, a klase se
-učitavaju tek kad se pozove naša putanja. To za web zahtjeve još nije izmjereno (treba ponovno postaviti
-mjerni mu-plugin, uz odobrenje); u WP-CLI-ju se ne može provjeriti jer WooCommerce ondje pri pokretanju čita
-sheme svih REST putanja.
+učitavaju tek kad se pozove naša putanja. Na staroj stranici to nije ponovno mjereno (treba novo odobrenje za
+mjerni mu-plugin); potvrđeno je mjerenjem na teststore1 (niže). U WP-CLI-ju se ne može provjeriti jer
+WooCommerce ondje pri pokretanju čita sheme svih REST putanja.
 
 ## teststore1.bulkbird.app
 
-Još nije mjereno: nginx i dalje šalje HTML kroz Varnish iako je u CloudPanelu isključen (`x-cache-age` raste
-na naslovnici i stranici proizvoda), pa je vlasnik odredio da se ondje ništa ne mijenja dok se to ne riješi.
-Trgovina je u načinu „Coming soon”; mjerit će se preko privatne poveznice za pregled ako je to jednostavan
-prekidač (stanje se vraća na kraju), inače s kolačićem testnog korisnika Shop manager.
+15. 11. 2026. · WordPress 7.1.4, WooCommerce 11.3.0, PHP 8.3 (FPM), Storefront 4.6.2, HPOS uključen.
+Plugin pri mjerenju „poslije”: `0.1.0-rc.2`. Varnish nije u putu zahtjeva (vlasnik je u vhostu postavio
+`proxy_pass` izravno na 8080; odgovori nemaju `x-cache-age`), Cloudflare ne sprema (`DYNAMIC`).
+
+**Način mjerenja stranica za kupce.** Trgovina je u WooCommerce načinu „Coming soon”, a privatna poveznica
+za pregled je isključena; postavke nisu mijenjane. Zato je svaka stranica mjerena dvaput:
+
+- **neprijavljen** — ono što posjetitelj danas stvarno dobiva: stranicu „uskoro” (ne stvarnu stranicu trgovine);
+- **Shop manager** — s kolačićem testnog korisnika `bulkbird-test-shopmgr`, koji vidi stvarne stranice trgovine.
+  Prijavljeni zahtjev radi više upita od neprijavljenog, ali je usporedba prije/poslije na istim uvjetima.
+
+| Stranica | Tko | Upiti prije | Upiti poslije | PHP datoteke prije → poslije | Datoteke plugina poslije | PHP ms prije (a / b) | PHP ms poslije (a / b) |
+|---|---|---|---|---|---|---|---|
+| Naslovnica | neprijavljen | 54 | 53–60 (a), 54 (b) | 1475 → 1476 | `bulkbird-helper.php` | 115,3 / 114,6 | 119,3 / 118,2 |
+| Naslovnica | Shop manager | 80 | 79 (a), 80 (b) | 1504 → 1505 | `bulkbird-helper.php` | 146,4 / 144,8 | 146,3 / 150,4 |
+| Trgovina `/shop/` | neprijavljen | 54 | 53 (a), 54 (b) | 1475 → 1476 | `bulkbird-helper.php` | 114,6 / 113,5 | 114,5 / 119,4 |
+| Trgovina `/shop/` | Shop manager | 80 | 79 (a), 80–82 (b) | 1504 → 1505 | `bulkbird-helper.php` | 144,8 / 145,4 | 150,0 / 144,4 |
+| Proizvod (varijabilni) | neprijavljen | 51 | 51 | 1484 → 1485 | `bulkbird-helper.php` | 112,2 / 110,2 | 115,5 / 114,3 |
+| Proizvod (varijabilni) | Shop manager | 113 | 113 | 1526 → 1527 | `bulkbird-helper.php` | 189,2 / 190,6 | 195,3 / 192,9 |
+| Košarica | neprijavljen | 48 | 47–49 (a), 48 (b) | 1474 → 1475 | `bulkbird-helper.php` | 110,6 / 111,9 | 114,2 / 112,5 |
+| Košarica | Shop manager | 98 (jednom 105) | 98 | 1554 → 1555 | `bulkbird-helper.php` | 164,7 / 162,8 | 170,0 / 163,9 |
+| `GET /wc/v3/products` (ključ) | — | 60 (jednom 62) | 60 | 1448 → 1449 | `bulkbird-helper.php` | 81,2 / 80,2 | 84,3 / 81,0 |
+| `GET /bulkbird/v1/info` (ključ) | — | — | 49 | 1699 | glavna + 3 | — | 100,9 / 99,8 |
+
+Rezultat po scenarijima:
+
+| Scenarij | Rezultat |
+|---|---|
+| H0.53 — upiti na stranicama za kupce | **0 dodatnih.** Uobičajena vrijednost je ista prije i poslije na svih osam mjerenja. Pojedinačna odstupanja (±1, jednom +6 ili +7) javljaju se i prije i poslije aktivacije i ne ponavljaju se; potječu od povremenih poslova WordPressa i WooCommercea, ne od plugina (plugin na tim stranicama nema nijednu kuku ni upit) |
+| H0.54 — učitane PHP datoteke | **+1** (samo glavna datoteka plugina) |
+| H0.57 — vrijeme PHP-a | medijani poslije su 0–6 ms viši od medijana prije; razlika dvaju mjerenja istog stanja je do 6 ms (npr. Shop manager, trgovina poslije: 150,0 i 144,4). **Unutar šuma**, ali uz napomenu: na pet od devet redaka oba mjerenja „poslije” su malo iznad oba „prije” (2–4 ms). Mjerenja su išla jedno za drugim, pa to može biti i pomak opterećenja servera; učitavanje jedne datoteke od 9 KB to ne objašnjava. Vrijedi ponoviti s izmjeničnim redoslijedom ako je važno |
+| H0.59 — tuđi REST zahtjev (`wc/v3`) | **0 dodatnih upita, +1 datoteka** (samo glavna) — potvrda ispravka iz `0.1.0-rc.2` |
+| H0.34 — `GET /info` | 49 upita (svi čitanje), PHP medijan **100 ms** (cilj < 200 ms); kroz Cloudflare medijan 153 ms (samo zapis) |
+| H0.55 — CSS/JS | HTML naslovnice, trgovine i košarice ne spominje plugin |
+| H0.58 — autoload opcije | plugin ima jednu opciju, bez automatskog učitavanja |
+
+Vrijeme kroz Cloudflare prije aktivacije (samo zapis): neprijavljen 175–189 ms, Shop manager 209–261 ms,
+`wc/v3/products` 140–144 ms.

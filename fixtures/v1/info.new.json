@@ -1,0 +1,16 @@
+{
+    "plugin_version": "0.1.0-rc.2",
+    "api_version": 1,
+    "features": [],
+    "wordpress_version": "7.1.4",
+    "woocommerce_version": "11.3.0",
+    "php_version": "8.3.36",
+    "hpos_enabled": true,
+    "timezone": "+00:00",
+    "currency": "EUR",
+    "max_upload_bytes": 67108864,
+    "memory_limit": 536870912,
+    "max_execution_time": 60,
+    "detected_plugins": [],
+    "analytics_lookup": "complete"
+}
