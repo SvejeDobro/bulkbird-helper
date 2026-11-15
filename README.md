@@ -7,7 +7,9 @@ i zbirnu prodaju izračunatu na serveru. Bulkbird radi i bez njega; plugin samo 
 Načela: bez sučelja, nula CSS-a i JS-a, nula opterećenja stranica za kupce, ništa ne briše u trgovini,
 bez osobnih podataka u odgovorima, autentikacija postojećim WooCommerce REST ključem.
 
-**Status: faza 0 izvedena i prihvaćena.** Verzija `0.1.0` (autentikacija WooCommerce ključem i `GET /bulkbird/v1/info`) je aktivan na obje testne stranice.
+**Status:** `0.1.0` (faza 0: autentikacija i `GET /info`) i `0.2.0` (faze 1 i 2: `GET` i `POST /media`,
+ograničenje učestalosti) su izvedeni, na grani `main`, s oznakama `v0.1.0` i `v0.2.0`. `0.2.0` je aktivan na
+obje testne stranice. Faze 3 i 4 čekaju odluku vlasnika.
 
 Provjere (sve se pokreću i u CI-ju):
 

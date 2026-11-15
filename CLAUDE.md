@@ -22,11 +22,35 @@ smiju biti u `~/.config/bulkbird-helper/test.env` (dozvole 600, izvan repozitori
 ispunjava skripta bez ispisa ili vlasnik. Nikad ključ stvarnog korisnika ili produkcije. Ako ključ
 dospije u log, razgovor ili repozitorij: odmah ga opozvati, stvoriti novi i javiti vlasniku.
 
+## Brisanje testnih slika (trajno odobrenje vlasnika, 15. 11. 2026., odluka P17)
+
+Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
+
+- samo privitci kojima **naslov počinje s `bbh-test-`** I koji imaju meta **`_bulkbird_upload_id`** (oba uvjeta);
+- samo na **teststore1** i **teststoreold**;
+- samo kroz **WP-CLI** (`tests/tools/cleanup-test-media.php`);
+- **prije brisanja ispisati broj i ID-jeve**.
+
+Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizvodi, ni narudžbe, ni datoteke.
+
+## CI (GitHub Actions)
+
+- CI pratim sam: nakon svakog pusha `~/bin/ci-status --wait <commit|oznaka|grana>` i rezultat u izvještaj.
+  Pali posao: popraviti, pushati, pričekati; ako je uzrok u pluginu (ne u testu ili pripremi), opisati ga.
+- Token je u `~/.config/bulkbird-helper/github-ci-token` (600): fine-grained, samo ovaj repozitorij,
+  **samo čitanje Actionsa** (i Metadata). Nikad se ne ispisuje, ne zapisuje u log, repozitorij ni bilješke
+  i ne stavlja u argumente naredbi; čita se iz datoteke u zaglavlje zahtjeva.
+- **Token istječe u utorak 16. 11. 2027.** Kad istekne ili prestane raditi (`ci-status` izlazi s 4),
+  javiti vlasniku da napravi novi.
+- Ako poslovi nisu pokrenuti zbog potrošenih minuta ili limita potrošnje, javiti vlasniku odmah.
+- CI se pokreće na `main`, na granama `paket-*` i na oznakama `v*`.
+
 ## Stanje
 
-Faza 0: scenariji su prihvaćeni (`docs/scenarios-faza0.md`, odluke u poglavlju 11). **Izvedba počinje tek
-na poziv vlasnika.** Do tada: ne stvarati korisnike ni ključeve, ne instalirati alate, ne pisati kod,
-ne mijenjati trgovinu.
+Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`: `GET` i `POST /media`, ograničenje učestalosti) su izvedene i na
+grani `main` (oznake `v0.1.0`, `v0.2.0`). `0.2.0` je aktivan na obje testne stranice. Faze 3 i 4 se ne
+počinju dok vlasnik ne odluči. Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno,
+svaki put i za svaku stranicu.
 
 ## Gdje je što
 
@@ -58,8 +82,12 @@ ne mijenjati trgovinu.
 3. **Nula opterećenja webshopa.** Nula CSS-a i JS-a (`wp_enqueue_*` se ne koristi). Na stranicama za
    kupce nijedan upit prema bazi. Plugin radi samo na REST zahtjevima za svoje putanje i na kukama
    spremanja/brisanja proizvoda.
-4. **Ništa ne briše** u trgovini (proizvodi, mediji, narudžbe). Jedino brisanje: vlastita tablica
-   dnevnika i vlastiti zapisi pri deinstalaciji.
+4. **Ništa ne briše** u trgovini (proizvodi, mediji, narudžbe). Jedino brisanje u bazi: vlastite tablice
+   i vlastiti zapisi pri deinstalaciji. **Jedino brisanje datoteka u kodu plugina** (prihvatio vlasnik
+   15. 11. 2026., odluka P22): u `Media_Controller::create_attachment()`, kad stvaranje privitka padne
+   nakon što je datoteka već premještena, plugin poziva `wp_delete_file()` nad tom svojom netom
+   spremljenom datotekom. Nijedno drugo brisanje datoteka se ne dodaje bez odobrenja vlasnika.
+   Pokrivaju ga testovi H2.69 (jedinični i integracijski) i namjerni kvar H2.69.
 5. **Bez osobnih podataka** u bilo kojem odgovoru (kupci, ID-evi narudžbi, adrese, e-mailovi, imena korisnika).
 6. **Isti ključ.** Autentikacija WooCommerce REST ključem; dozvola ključa (read / read_write) vrijedi i za plugin.
 7. **Najmanja prava.** Svaka putanja provjerava sposobnost korisnika; nijedna nema
@@ -69,6 +97,7 @@ ne mijenjati trgovinu.
 
 - Svaki ulaz validiran i saniran kroz `args` sheme REST putanja; SQL samo kroz `$wpdb->prepare`.
 - Ograničenje učestalosti po korisniku (npr. 120 zahtjeva/min, prijenos slika 30/min) → 429 s `Retry-After`.
+  Brojač koji se ne može spremiti pušta zahtjev nebrojen (odluka P21, prihvatio vlasnik 15. 11. 2026.).
 - Sadržaj zahtjeva se ne zapisuje u log; greške samo s kodom i kratkim opisom.
   Odgovori grešaka bez tragova stoga i bez putanja na disku.
 - Opcije s `autoload = no`.

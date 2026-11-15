@@ -19,8 +19,12 @@ final class CSiteE2ETest extends E2ECase {
 
 	public function test_h0_37_state_after_activation(): void {
 		$internal = self::internal();
-		self::assertSame( array(), $internal['tables'], 'faza 0 ne stvara tablice' );
-		self::assertSame( array(), $internal['cron'], 'faza 0 nema cron poslova' );
+		// Od 0.2.0: jedina tablica je brojač učestalosti; nastaje pri prvom zahtjevu prema putanji plugina.
+		self::assertContains( count( $internal['tables'] ), array( 0, 1 ) );
+		if ( $internal['tables'] ) {
+			self::assertStringEndsWith( 'bulkbird_rate', $internal['tables'][0] );
+		}
+		self::assertSame( array(), $internal['cron'], 'nema cron poslova' );
 		self::assertCount( 1, $internal['options'], 'najviše jedna vlastita opcija' );
 		self::assertSame( 'bulkbird_helper_db_version', $internal['options'][0]['option_name'] );
 		self::assertContains( $internal['options'][0]['autoload'], array( 'no', 'off' ), 'opcija se ne smije automatski učitavati' );
@@ -44,7 +48,7 @@ final class CSiteE2ETest extends E2ECase {
 	}
 
 	public function test_h0_47_plugin_files_do_nothing_when_called_directly(): void {
-		$files = array( 'bulkbird-helper.php', 'uninstall.php', 'includes/class-info-controller.php', 'includes/class-permissions.php', 'includes/class-environment.php', 'includes/class-activation.php', 'includes/class-status-report.php' );
+		$files = array( 'bulkbird-helper.php', 'uninstall.php', 'includes/class-info-controller.php', 'includes/class-permissions.php', 'includes/class-environment.php', 'includes/class-activation.php', 'includes/class-status-report.php', 'includes/class-media-controller.php', 'includes/class-media-library.php', 'includes/class-media-rules.php', 'includes/class-rate-limiter.php' );
 		foreach ( $files as $file ) {
 			$response = self::http( 'GET', self::url( '/wp-content/plugins/bulkbird-helper/' . $file ) );
 			self::assertNotSame( 500, $response['status'], $file );
@@ -91,7 +95,7 @@ final class CSiteE2ETest extends E2ECase {
 		$loaded = self::internal()['plugin_files_loaded'];
 		sort( $loaded );
 		self::assertSame(
-			array( 'bulkbird-helper.php', 'includes/class-environment.php', 'includes/class-info-controller.php', 'includes/class-permissions.php' ),
+			array( 'bulkbird-helper.php', 'includes/class-environment.php', 'includes/class-info-controller.php', 'includes/class-media-rules.php', 'includes/class-permissions.php', 'includes/class-rate-limiter.php' ),
 			$loaded,
 			'aktivacijske i statusne datoteke se ne učitavaju pri REST zahtjevu. Napomena: u WP-CLI-ju WooCommerce pri pokretanju čita sheme svih REST putanja (naredbe "wp wc"), pa se klase putanja ovdje uvijek učitaju; da ih tuđi WEB zahtjevi ne učitavaju dokazuje mjerenje (docs/measurements/faza0.md)'
 		);

@@ -1,7 +1,10 @@
 {
-    "plugin_version": "0.1.0",
+    "plugin_version": "0.2.0",
     "api_version": 1,
-    "features": [],
+    "features": [
+        "media.read",
+        "media.upload"
+    ],
     "wordpress_version": "7.1.4",
     "woocommerce_version": "11.3.0",
     "php_version": "8.3.36",
@@ -12,5 +15,15 @@
     "memory_limit": 536870912,
     "max_execution_time": 60,
     "detected_plugins": [],
-    "analytics_lookup": "complete"
+    "analytics_lookup": "complete",
+    "media": {
+        "upload_mime_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+            "image/avif"
+        ],
+        "upload_max_bytes": 20971520
+    }
 }

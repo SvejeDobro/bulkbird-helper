@@ -49,7 +49,7 @@ final class PluginTest extends TestCase {
 
 	public function test_h0_75_info_route_has_a_real_permission_callback(): void {
 		Bulkbird\Helper\register_rest_routes();
-		self::assertCount( 1, BBH_State::$routes );
+		self::assertSame( array( '/info', '/media' ), array_column( BBH_State::$routes, 1 ) );
 		list( $namespace, $route, $args ) = BBH_State::$routes[0];
 		self::assertSame( 'bulkbird/v1', $namespace );
 		self::assertSame( '/info', $route );
@@ -65,7 +65,8 @@ final class PluginTest extends TestCase {
 		$denied               = call_user_func( $args[0]['permission_callback'] );
 		self::assertInstanceOf( WP_Error::class, $denied, 'prijavljen bez manage_woocommerce mora biti odbijen' );
 
-		BBH_State::$caps = array( 'manage_woocommerce' );
+		BBH_State::$caps          = array( 'manage_woocommerce' );
+		BBH_Media_State::$user_id = 7;
 		self::assertTrue( call_user_func( $args[0]['permission_callback'] ) );
 		self::assertSame( array_keys( ( new Info_Controller() )->get_info()->get_data() ), array_keys( call_user_func( $args[0]['callback'] )->get_data() ) );
 		self::assertSame( ( new Info_Controller() )->get_schema(), call_user_func( $args['schema'] ) );
@@ -73,8 +74,10 @@ final class PluginTest extends TestCase {
 
 	public function test_route_callbacks_are_plain_function_names_so_nothing_is_loaded_at_registration(): void {
 		Bulkbird\Helper\register_rest_routes();
-		$args = BBH_State::$routes[0][2];
-		foreach ( array( $args[0]['callback'], $args[0]['permission_callback'], $args['schema'] ) as $callback ) {
+		$args      = BBH_State::$routes[0][2];
+		$media     = BBH_State::$routes[1][2];
+		$callbacks = array( $args[0]['callback'], $args[0]['permission_callback'], $args['schema'], $media[0]['callback'], $media[0]['permission_callback'], $media[1]['callback'], $media[1]['permission_callback'] );
+		foreach ( $callbacks as $callback ) {
 			self::assertIsString( $callback, 'povratni pozivi moraju biti imena funkcija iz glavne datoteke' );
 			self::assertStringStartsWith( 'Bulkbird\\Helper\\rest_', $callback );
 		}
@@ -99,12 +102,15 @@ final class PluginTest extends TestCase {
 				'max_execution_time',
 				'detected_plugins',
 				'analytics_lookup',
+				'media',
 			),
 			array_keys( $data )
 		);
 		self::assertSame( Bulkbird\Helper\VERSION, $data['plugin_version'] );
 		self::assertSame( 1, $data['api_version'] );
-		self::assertSame( array(), $data['features'], 'H0.24: u fazi 0 prazan popis' );
+		self::assertSame( array( 'media.read', 'media.upload' ), $data['features'], 'H2.49' );
+		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $data['media'] ) );
+		self::assertSame( 20971520, $data['media']['upload_max_bytes'], 'manje od najvećeg prijenosa WordPressa i 20 MB' );
 		self::assertIsString( $data['wordpress_version'] );
 		self::assertIsString( $data['woocommerce_version'] );
 		self::assertMatchesRegularExpression( '/^\d+\.\d+\.\d+$/', $data['php_version'] );
@@ -167,10 +173,10 @@ final class PluginTest extends TestCase {
 	// --- Zaglavlja protiv cachea (H0.18) --------------------------------------------------------
 
 	public function test_h0_18_own_responses_forbid_caching_foreign_ones_are_untouched(): void {
-		$own = Bulkbird\Helper\forbid_caching_of_own_responses( new WP_REST_Response(), null, new WP_REST_Request( 'GET', '/bulkbird/v1/info' ) );
+		$own = Bulkbird\Helper\finish_own_responses( new WP_REST_Response(), null, new WP_REST_Request( 'GET', '/bulkbird/v1/info' ) );
 		self::assertSame( 'no-store, private, max-age=0', $own->headers['Cache-Control'] );
 
-		$foreign = Bulkbird\Helper\forbid_caching_of_own_responses( new WP_REST_Response(), null, new WP_REST_Request( 'GET', '/wc/v3/products' ) );
+		$foreign = Bulkbird\Helper\finish_own_responses( new WP_REST_Response(), null, new WP_REST_Request( 'GET', '/wc/v3/products' ) );
 		self::assertArrayNotHasKey( 'Cache-Control', $foreign->headers );
 	}
 
@@ -202,7 +208,7 @@ final class PluginTest extends TestCase {
 
 	public function test_routes_are_registered_on_a_supported_single_site(): void {
 		Bulkbird\Helper\register_rest_routes();
-		self::assertCount( 1, BBH_State::$routes );
+		self::assertCount( 2, BBH_State::$routes );
 	}
 
 	// --- Deinstalacija (H0.45; kvar H0.89) ------------------------------------------------------

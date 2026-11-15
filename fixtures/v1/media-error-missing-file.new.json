@@ -1,0 +1,10 @@
+{
+    "status": 400,
+    "body": {
+        "code": "bulkbird_missing_file",
+        "message": "No file was sent in the \"file\" field.",
+        "data": {
+            "status": 400
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "status": 415,
+    "body": {
+        "code": "bulkbird_unsupported_type",
+        "message": "This file type is not accepted.",
+        "data": {
+            "status": 415
+        }
+    }
+}

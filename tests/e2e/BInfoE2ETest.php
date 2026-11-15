@@ -25,6 +25,7 @@ final class BInfoE2ETest extends E2ECase {
 		'max_execution_time',
 		'detected_plugins',
 		'analytics_lookup',
+		'media',
 	);
 
 	/** @return array{status: int, headers: array<string, string>, body: string, json: mixed, seconds: float} */
@@ -59,8 +60,17 @@ final class BInfoE2ETest extends E2ECase {
 		self::assertSame( self::expected_version(), self::site()['plugin_version'] );
 	}
 
-	public function test_h0_24_features_empty_in_phase_0(): void {
-		self::assertSame( array(), self::info()['json']['features'] );
+	public function test_h2_49_features_and_media_capabilities(): void {
+		$info = self::info()['json'];
+		self::assertSame( array( 'media.read', 'media.upload' ), $info['features'] );
+		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $info['media'] ) );
+		self::assertSame( min( $info['max_upload_bytes'], 20971520 ), $info['media']['upload_max_bytes'] );
+		foreach ( array( 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ) as $mime ) {
+			self::assertContains( $mime, $info['media']['upload_mime_types'] );
+		}
+		// H2.15 / H2.16: AVIF prima samo trgovina čiji ga WordPress i poslužitelj podržavaju.
+		self::assertSame( 'NEW' === self::target(), in_array( 'image/avif', $info['media']['upload_mime_types'], true ) );
+		self::assertNotContains( 'image/svg+xml', $info['media']['upload_mime_types'] );
 	}
 
 	public function test_h0_25_h0_26_values_match_the_shop(): void {

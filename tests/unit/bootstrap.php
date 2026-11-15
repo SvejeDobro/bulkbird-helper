@@ -10,6 +10,7 @@ declare( strict_types=1 );
 
 define( 'ABSPATH', '/nonexistent-abspath/' );
 define( 'WC_VERSION', '8.0.0' );
+define( 'ARRAY_A', 'ARRAY_A' );
 define( 'WP_PLUGIN_DIR', __DIR__ . '/fixtures/plugins' );
 
 final class BBH_State {
@@ -38,6 +39,17 @@ final class BBH_State {
 		self::$added_options   = array();
 		self::$deleted_options = array();
 		self::$routes          = array();
+		BBH_Media_State::$user_id         = 0;
+		BBH_Media_State::$rate_limits     = null;
+		BBH_Media_State::$updated_options = array();
+		BBH_Media_State::$wp_max_upload   = 67108864;
+		BBH_Media_State::$editor_supports = array( 'image/webp', 'image/avif' );
+		BBH_Media_State::$insert_result    = 0;
+		BBH_Media_State::$deleted_files    = array();
+		BBH_Media_State::$post_meta        = array();
+		BBH_Media_State::$upload_dir_error = false;
+		BBH_Media_State::$handled_uploads  = 0;
+		$GLOBALS['wpdb']                  = new BBH_Fake_Wpdb();
 		$_GET                  = array();
 		$_POST                 = array();
 		unset( $_SERVER['REQUEST_URI'] );
@@ -80,8 +92,16 @@ class WP_HTTP_Response {
 class WP_REST_Response extends WP_HTTP_Response {}
 class WP_REST_Request {
 	public function __construct( public string $method = 'GET', public string $route = '' ) {}
+	public function get_method(): string {
+		return $this->method;
+	}
 	public function get_route(): string {
 		return $this->route;
+	}
+	/** @var array<string, mixed> */
+	public array $params = array();
+	public function get_param( string $name ) {
+		return $this->params[ $name ] ?? null;
 	}
 }
 class WP_REST_Server {
@@ -158,9 +178,6 @@ function wp_timezone_string(): string {
 function get_woocommerce_currency(): string {
 	return 'EUR';
 }
-function wp_max_upload_size(): int {
-	return 2097152;
-}
 function wp_convert_hr_to_bytes( string $value ): int {
 	$value = strtolower( trim( $value ) );
 	$bytes = (int) $value;
@@ -185,9 +202,180 @@ function get_file_data( string $file, array $headers ): array {
 	return $out;
 }
 
+
+// --- Dodatne zamjene za paket 0.2.0 -----------------------------------------------------------
+
+/** Lažni $wpdb koji oponaša brojač učestalosti (jedan redak po korisniku, atomski upsert). */
+final class BBH_Fake_Wpdb {
+	public string $prefix   = 'wp_';
+	public string $posts    = 'wp_posts';
+	public string $postmeta = 'wp_postmeta';
+	public string $dbname   = 'testdb';
+	public bool $table_exists = false;
+	/** @var array<int, array{window_start:int, hits:int, upload_hits:int}> */
+	public array $rows = array();
+	/** @var string[] */
+	public array $log = array();
+	/** @var array<int, mixed>|null */
+	private ?array $last_args = null;
+
+	public function prepare( string $sql, ...$args ) {
+		if ( 1 === count( $args ) && is_array( $args[0] ) ) {
+			$args = $args[0];
+		}
+		$this->last_args = $args;
+		return $sql . "\0" . json_encode( $args );
+	}
+	public function suppress_errors( bool $suppress = true ): bool {
+		return false;
+	}
+	public function get_charset_collate(): string {
+		return '';
+	}
+	public function query( string $prepared ) {
+		list( $sql, $json ) = array_pad( explode( "\0", $prepared, 2 ), 2, '[]' );
+		$args               = (array) json_decode( $json, true );
+		$this->log[]        = strtoupper( (string) strtok( ltrim( $sql ), " \n\t" ) );
+		if ( 0 === strpos( ltrim( $sql ), 'CREATE TABLE' ) ) {
+			$this->table_exists = true;
+			return true;
+		}
+		if ( 0 === strpos( ltrim( $sql ), 'INSERT INTO' ) ) {
+			if ( ! $this->table_exists ) {
+				return false;
+			}
+			list( , $user_id, $window_start, $upload ) = $args;
+			$row = $this->rows[ $user_id ] ?? null;
+			if ( null === $row || $row['window_start'] !== $window_start ) {
+				$row = array( 'window_start' => $window_start, 'hits' => 1, 'upload_hits' => $upload );
+			} else {
+				++$row['hits'];
+				$row['upload_hits'] += $upload;
+			}
+			$this->rows[ $user_id ] = $row;
+			return 1;
+		}
+		return false;
+	}
+	public function get_row( string $prepared, $output = null ) {
+		list( , $json ) = array_pad( explode( "\0", $prepared, 2 ), 2, '[]' );
+		$args           = (array) json_decode( $json, true );
+		$this->log[]    = 'SELECT';
+		$row            = $this->rows[ $args[1] ] ?? null;
+		return null === $row ? null : array( 'hits' => (string) $row['hits'], 'upload_hits' => (string) $row['upload_hits'] );
+	}
+}
+
+final class BBH_Media_State {
+	/** @var array<string, string> */
+	public static array $site_mimes = array(
+		'jpg|jpeg|jpe' => 'image/jpeg',
+		'png'          => 'image/png',
+		'gif'          => 'image/gif',
+		'webp'         => 'image/webp',
+		'avif'         => 'image/avif',
+		'pdf'          => 'application/pdf',
+	);
+	/** @var string[] */
+	public static array $editor_supports = array( 'image/webp', 'image/avif' );
+	public static int $wp_max_upload     = 67108864;
+	public static int $user_id           = 0;
+	/** @var array<string, mixed>|null */
+	public static ?array $rate_limits    = null;
+	/** @var array<int, array<int, mixed>> */
+	public static array $updated_options = array();
+	/** @var int|WP_Error What wp_insert_attachment() returns. */
+	public static $insert_result         = 0;
+	/** @var string[] */
+	public static array $deleted_files   = array();
+	/** @var array<int, array<int, mixed>> */
+	public static array $post_meta       = array();
+	/** @var string|false */
+	public static $upload_dir_error      = false;
+	public static int $handled_uploads   = 0;
+}
+
+function apply_filters( string $hook, $value ) {
+	if ( 'bulkbird_helper_rate_limits' === $hook && null !== BBH_Media_State::$rate_limits ) {
+		return BBH_Media_State::$rate_limits;
+	}
+	return $value;
+}
+function wp_using_ext_object_cache(): bool {
+	return false;
+}
+function update_option( string $name, $value, $autoload = null ): bool {
+	BBH_Media_State::$updated_options[] = array( $name, $value, $autoload );
+	return true;
+}
+function get_current_user_id(): int {
+	return BBH_Media_State::$user_id;
+}
+function get_allowed_mime_types(): array {
+	return BBH_Media_State::$site_mimes;
+}
+function wp_image_editor_supports( array $args ): bool {
+	return in_array( $args['mime_type'] ?? '', BBH_Media_State::$editor_supports, true );
+}
+function wp_max_upload_size(): int {
+	return BBH_Media_State::$wp_max_upload;
+}
+function wp_get_image_mime( string $file ) {
+	$type = @exif_imagetype( $file );
+	return false === $type ? false : image_type_to_mime_type( $type );
+}
+function wp_getimagesize( string $file ) {
+	return @getimagesize( $file );
+}
+function wp_basename( string $path, string $suffix = '' ): string {
+	return urldecode( basename( str_replace( array( '%2F', '%5C' ), '/', urlencode( $path ) ), $suffix ) );
+}
+function sanitize_file_name( string $name ): string {
+	$name = preg_replace( '/[^A-Za-z0-9._-]+/', '-', $name );
+	return trim( (string) $name, '.-_' );
+}
+function sanitize_text_field( string $text ): string {
+	return trim( strip_tags( $text ) );
+}
+function is_wp_error( $thing ): bool {
+	return $thing instanceof WP_Error;
+}
+
+function wp_insert_attachment( array $args, $file = false, int $parent = 0, bool $wp_error = false ) {
+	return BBH_Media_State::$insert_result;
+}
+function wp_upload_dir(): array {
+	return array(
+		'path'  => sys_get_temp_dir(),
+		'error' => BBH_Media_State::$upload_dir_error,
+	);
+}
+function wp_handle_upload( array $file, array $overrides ): array {
+	++BBH_Media_State::$handled_uploads;
+	return array( 'error' => 'Specified file failed upload test.' );
+}
+function wp_delete_file( string $file ): bool {
+	BBH_Media_State::$deleted_files[] = $file;
+	return @unlink( $file );
+}
+function update_post_meta( int $post_id, string $key, $value ): bool {
+	BBH_Media_State::$post_meta[] = array( $post_id, $key, $value );
+	return true;
+}
+function wp_generate_attachment_metadata( int $attachment_id, string $file ): array {
+	return array();
+}
+function wp_update_attachment_metadata( int $attachment_id, array $data ): bool {
+	return true;
+}
+
 $bbh_root = dirname( __DIR__, 2 );
 require_once $bbh_root . '/bulkbird-helper.php';
 require_once $bbh_root . '/includes/class-permissions.php';
+require_once $bbh_root . '/includes/class-rate-limiter.php';
+require_once $bbh_root . '/includes/class-media-rules.php';
+require_once $bbh_root . '/includes/class-media-library.php';
+require_once $bbh_root . '/includes/class-media-controller.php';
 require_once $bbh_root . '/includes/class-environment.php';
 require_once $bbh_root . '/includes/class-info-controller.php';
 require_once $bbh_root . '/includes/class-activation.php';

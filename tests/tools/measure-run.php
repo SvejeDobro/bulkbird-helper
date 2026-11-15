@@ -42,6 +42,11 @@ if ( '' !== $product ) {
 if ( '1' === getenv( 'BBH_MEASURE_INFO' ) ) {
 	$pages['bulkbird-info'] = array( '/wp-json/bulkbird/v1/info', true );
 }
+if ( '1' === getenv( 'BBH_MEASURE_MEDIA' ) ) {
+	// H1.44, H1.45: najveća stranica popisa i pretraga po dijelu teksta (90 zahtjeva s ključem, ispod ograničenja od 120 u minuti).
+	$pages['bulkbird-media-100']    = array( '/wp-json/bulkbird/v1/media?per_page=100', true );
+	$pages['bulkbird-media-search'] = array( '/wp-json/bulkbird/v1/media?per_page=100&search=a', true );
+}
 
 $cookie = (string) getenv( 'BBH_MEASURE_COOKIE' );
 
