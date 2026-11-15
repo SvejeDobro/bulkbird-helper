@@ -1,0 +1,16 @@
+parameters:
+    level: 8
+    paths:
+        - bulkbird-helper.php
+        - uninstall.php
+        - includes
+    scanFiles:
+        - vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+    # Svaka iznimka ide u phpstan-baseline.neon s obrazloženjem (odluka P9).
+    tmpDir: .phpstan-cache
+    # Verzija WooCommercea se zna tek u izvođenju (definicije opisuju samo jednu verziju).
+    dynamicConstantNames:
+        - WC_VERSION
+    # Definicije WooCommercea su PHPDoc jedne verzije; kod mora raditi od 8.0 do najnovije,
+    # pa provjere "postoji li ova metoda" nisu suvišne.
+    treatPhpDocTypesAsCertain: false
