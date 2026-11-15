@@ -5,3 +5,4 @@
 /.phpunit.cache/
 *.env
 /.phpstan-cache/
+/.phpbin/

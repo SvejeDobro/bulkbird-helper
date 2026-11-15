@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} — sintaksa i jedinični testovi
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress
+      - name: Sintaksa (H0.71)
+        run: bin/lint.sh
+      - name: Jedinični testovi
+        run: composer unit
+
+  static:
+    name: PHPCS, PHPStan, čuvari, paket, namjerni kvarovi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress
+      - name: PHPCS — WordPress standard i PHPCompatibilityWP (H0.72, H0.76)
+        run: composer phpcs
+      - name: PHPStan razina 8 (H0.73)
+        run: composer phpstan
+      - name: Čuvari — nula CSS/JS, nula frontenda, dozvole, tajne (H0.74, H0.75, H0.79)
+        run: composer guards
+      - name: Paket (H0.78)
+        run: bin/build-zip.sh
+      - name: Namjerni kvarovi (H0.81–H0.90)
+        run: bin/run-faults.sh
