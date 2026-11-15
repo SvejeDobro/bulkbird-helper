@@ -1,0 +1,10 @@
+{
+    "status": 409,
+    "body": {
+        "code": "bulkbird_upload_id_conflict",
+        "message": "This upload id was already used for a different file.",
+        "data": {
+            "status": 409
+        }
+    }
+}

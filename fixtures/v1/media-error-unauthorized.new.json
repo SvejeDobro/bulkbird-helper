@@ -1,0 +1,10 @@
+{
+    "status": 401,
+    "body": {
+        "code": "bulkbird_unauthorized",
+        "message": "Authentication is required.",
+        "data": {
+            "status": 401
+        }
+    }
+}

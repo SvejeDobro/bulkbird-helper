@@ -1,0 +1,27 @@
+{
+    "status": 200,
+    "headers": {
+        "x-wp-total": "1",
+        "x-wp-totalpages": "1"
+    },
+    "body": [
+        {
+            "id": 16770,
+            "title": "bbh-test-primjer",
+            "alt": "Primjer alternativnog teksta",
+            "filename": "bbh-test-primjer.jpg",
+            "mime": "image/jpeg",
+            "width": 640,
+            "height": 480,
+            "filesize": 32810,
+            "date_gmt": "2026-11-15T15:21:25",
+            "modified_gmt": "2026-11-15T15:21:25",
+            "parent_id": 0,
+            "urls": {
+                "thumbnail": "https://teststore1.bulkbird.app/wp-content/uploads/2026/11/bbh-test-primjer-150x150.jpg",
+                "medium": "https://teststore1.bulkbird.app/wp-content/uploads/2026/11/bbh-test-primjer-300x225.jpg",
+                "full": "https://teststore1.bulkbird.app/wp-content/uploads/2026/11/bbh-test-primjer.jpg"
+            }
+        }
+    ]
+}

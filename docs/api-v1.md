@@ -120,6 +120,10 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.json` (teststore1, najnovije verzije;
 isti sadržaj kao `fixtures/v1/info.new.json`) i `fixtures/v1/info.old.json` (stara testna stranica).
 
+Primjeri za `/media` (teststore1; svaki sadrži `status`, važna zaglavlja i `body`): `media-list.new.json`,
+`media-list-empty.new.json`, `media-item-created.new.json` (201), `media-item-existing.new.json` (200) te
+greške `media-error-*.new.json` (401, 401 za ključ samo za čitanje, 403, 400, 409, 415).
+
 ## 6. `GET /bulkbird/v1/media` (od `0.2.0`; `features` sadrži `media.read`)
 
 Sposobnosti: `upload_files` **i** `manage_woocommerce` (obje). Ne mijenja ništa u trgovini.
@@ -159,6 +163,12 @@ Stavka ne sadrži autora ni putanje na disku.
 
 Ograničenje: pretraga po dijelu teksta ne koristi indeks baze, pa na vrlo velikim bibliotekama (desetci
 tisuća slika) može biti sporija.
+
+Ograničenje `modified_after` (provjereno 15. 11. 2026.): `modified_gmt` se mijenja kad se slika uredi kroz
+WordPress (medijska biblioteka u adminu, `wp/v2/media`), pa i kad se promijeni samo alternativni tekst.
+**Ne mijenja se** kad netko alternativni tekst upiše izravno u meta polje, što radi i WooCommerce REST pri
+spremanju slika proizvoda (`images: [{id, alt}]`). Takvu promjenu `modified_after` ne vidi; plugin namjerno
+ne dodaje kuke koje bi mijenjale datume tuđih zapisa. Promjene koje je napravio sam Bulkbird su mu poznate.
 
 ## 7. `POST /bulkbird/v1/media` (od `0.2.0`; `features` sadrži `media.upload`)
 
