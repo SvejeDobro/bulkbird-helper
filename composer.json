@@ -31,7 +31,7 @@
         "lint": "bin/lint.sh",
         "phpcs": "phpcs",
         "phpstan": "phpstan analyse --memory-limit=1G",
-        "unit": "phpunit --testsuite unit",
+        "unit": "phpunit --testsuite unit --bootstrap tests/unit/bootstrap.php",
         "guards": "bin/check-guards.sh",
         "build": "bin/build-zip.sh",
         "check": [
@@ -41,7 +41,7 @@
             "@unit",
             "@guards"
         ],
-        "e2e": "phpunit --testsuite e2e",
+        "e2e": "phpunit --testsuite e2e --bootstrap tests/e2e/bootstrap.php --testdox",
         "faults": "bin/run-faults.sh"
     }
 }

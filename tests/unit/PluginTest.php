@@ -26,6 +26,7 @@ final class PluginTest extends TestCase {
 		self::assertInstanceOf( WP_Error::class, $result );
 		self::assertSame( 'bulkbird_unauthorized', $result->get_error_code() );
 		self::assertSame( array( 'status' => 401 ), $result->get_error_data() );
+		self::assertDoesNotMatchRegularExpression( '#/|\\.php#', $result->get_error_message(), 'H0.17: poruka greške bez putanja' );
 	}
 
 	public function test_h0_8_logged_in_without_capability_gets_403(): void {
@@ -35,6 +36,7 @@ final class PluginTest extends TestCase {
 		self::assertInstanceOf( WP_Error::class, $result );
 		self::assertSame( 'bulkbird_forbidden', $result->get_error_code() );
 		self::assertSame( array( 'status' => 403 ), $result->get_error_data() );
+		self::assertDoesNotMatchRegularExpression( '#/|\\.php#', $result->get_error_message(), 'H0.17: poruka greške bez putanja' );
 	}
 
 	public function test_h0_91_shop_manager_capability_is_enough(): void {
