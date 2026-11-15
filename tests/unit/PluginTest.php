@@ -236,7 +236,7 @@ final class PluginTest extends TestCase {
 				'woocommerce_rest_is_request_to_rest_api',
 				'woocommerce_system_status_report',
 			),
-			array_values( array_unique( array_diff( $hooks, array( 'rest_post_dispatch' ) ) ) )
+			array_values( array_unique( array_diff( $hooks, array( 'rest_post_dispatch', 'rest_request_before_callbacks' ) ) ) )
 		);
 	}
 }

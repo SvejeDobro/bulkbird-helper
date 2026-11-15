@@ -6,3 +6,4 @@
 *.env
 /.phpstan-cache/
 /.phpbin/
+__pycache__/

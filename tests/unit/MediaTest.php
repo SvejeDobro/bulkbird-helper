@@ -471,4 +471,89 @@ final class MediaTest extends TestCase {
 		self::assertSame( 1, BBH_Media_State::$handled_uploads );
 		self::assertSame( array(), BBH_Media_State::$deleted_files );
 	}
+
+	// --- 401/403 prije 400 (0.2.1; kvarovi H2.70a, H2.70b) ---------------------------------------
+
+	public function test_h2_70_not_signed_in_or_not_allowed_wins_over_an_invalid_parameter(): void {
+		Bulkbird\Helper\register_rest_routes();
+		$media   = BBH_State::$routes[1][2];
+		$invalid = new WP_Error( 'rest_invalid_param', 'Invalid parameter(s): client_upload_id', array( 'status' => 400 ) );
+		$missing = new WP_Error( 'rest_missing_callback_param', 'Missing parameter(s): x', array( 'status' => 400 ) );
+
+		foreach ( array( array( 'GET', $media[0] ), array( 'POST', $media[1] ) ) as list( $method, $handler ) ) {
+			foreach ( array( $invalid, $missing ) as $error ) {
+				BBH_State::$logged_in = false;
+				$request              = new WP_REST_Request( $method, '/bulkbird/v1/media' );
+				$result               = Bulkbird\Helper\auth_errors_first( $error, $handler, $request );
+				self::assertSame( 'bulkbird_unauthorized', $result->get_error_code(), "$method bez prijave" );
+				self::assertSame( array( 'status' => 401 ), $result->get_error_data() );
+
+				BBH_State::$logged_in     = true;
+				BBH_Media_State::$user_id = 7;
+				BBH_State::$caps          = array( 'upload_files' );
+				$result                   = Bulkbird\Helper\auth_errors_first( $error, $handler, new WP_REST_Request( $method, '/bulkbird/v1/media' ) );
+				self::assertSame( 'bulkbird_forbidden', $result->get_error_code(), "$method bez prava" );
+				self::assertSame( array( 'status' => 403 ), $result->get_error_data() );
+
+				BBH_State::$caps = array( 'upload_files', 'manage_woocommerce' );
+				self::assertSame( $error, Bulkbird\Helper\auth_errors_first( $error, $handler, new WP_REST_Request( $method, '/bulkbird/v1/media' ) ), "$method s pravima: greška parametra ostaje" );
+			}
+		}
+	}
+
+	public function test_h2_70_only_own_routes_and_only_parameter_errors_are_touched(): void {
+		Bulkbird\Helper\register_rest_routes();
+		$handler = BBH_State::$routes[1][2][1];
+		$calls   = 0;
+		$spy     = array(
+			'permission_callback' => static function () use ( &$calls ) {
+				++$calls;
+				return new WP_Error( 'x', 'x', array( 'status' => 401 ) );
+			},
+		);
+		$invalid = new WP_Error( 'rest_invalid_param', 'x', array( 'status' => 400 ) );
+
+		// Tuđe putanje: ništa se ne mijenja i njihova provjera dozvole se ne poziva.
+		foreach ( array( '/wc/v3/products', '/wp/v2/media', '/xbulkbird/v1/media', '/wp/v2/bulkbird/v1/media' ) as $route ) {
+			self::assertSame( $invalid, Bulkbird\Helper\auth_errors_first( $invalid, $spy, new WP_REST_Request( 'POST', $route ) ), $route );
+		}
+		self::assertSame( 0, $calls );
+
+		// Vlastita putanja: druge greške i uspješan tok ostaju netaknuti.
+		$request = new WP_REST_Request( 'POST', '/bulkbird/v1/media' );
+		$other   = new WP_Error( 'rest_no_route', 'x', array( 'status' => 404 ) );
+		self::assertSame( $other, Bulkbird\Helper\auth_errors_first( $other, $handler, $request ) );
+		self::assertNull( Bulkbird\Helper\auth_errors_first( null, $handler, $request ) );
+		self::assertSame( $invalid, Bulkbird\Helper\auth_errors_first( $invalid, array(), $request ), 'bez provjere dozvole nema zamjene' );
+		self::assertSame( $invalid, Bulkbird\Helper\auth_errors_first( $invalid, $handler, 'nije zahtjev' ) );
+	}
+
+	public function test_h2_70_the_early_permission_check_does_not_count_the_request_twice(): void {
+		Bulkbird\Helper\register_rest_routes();
+		$media                    = BBH_State::$routes[1][2];
+		BBH_State::$logged_in     = true;
+		BBH_Media_State::$user_id = 7;
+		BBH_State::$caps          = array( 'upload_files', 'manage_woocommerce' );
+		$invalid                  = new WP_Error( 'rest_invalid_param', 'x', array( 'status' => 400 ) );
+
+		$request = new WP_REST_Request( 'POST', '/bulkbird/v1/media' );
+		Bulkbird\Helper\auth_errors_first( $invalid, $media[1], $request );
+		// WordPress zatim za zaglavlje "Allow" opet pita obje metode.
+		call_user_func( $media[0]['permission_callback'], $request );
+		call_user_func( $media[1]['permission_callback'], $request );
+		self::assertSame( 1, $GLOBALS['wpdb']->rows[7]['hits'] );
+		self::assertSame( 1, $GLOBALS['wpdb']->rows[7]['upload_hits'] );
+
+		// Odbijeni (401/403) se ne broje ni ovim putem.
+		BBH_State::$caps = array( 'upload_files' );
+		Bulkbird\Helper\auth_errors_first( $invalid, $media[1], new WP_REST_Request( 'POST', '/bulkbird/v1/media' ) );
+		self::assertSame( 1, $GLOBALS['wpdb']->rows[7]['hits'] );
+	}
+
+	public function test_h2_70_the_filter_exists_only_during_rest_requests(): void {
+		// Kuka se dodaje u register_rest_routes(), dakle samo na REST zahtjevima (rest_api_init); vidi i H0.56.
+		Bulkbird\Helper\register_rest_routes();
+		self::assertContains( array( 'rest_request_before_callbacks', 'Bulkbird\Helper\auth_errors_first', 10, 3 ), BBH_State::$hooks );
+	}
 }
+

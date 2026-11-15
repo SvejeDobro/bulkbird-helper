@@ -39,12 +39,29 @@ final class AAuthE2ETest extends E2ECase {
 		self::assertSame( 200, $response['status'], self::describe( $response ) );
 	}
 
-	/** @depends test_h0_1_read_key_in_basic_header */
-	public function test_h0_3_key_in_query_string(): void {
-		list( $ck, $cs ) = self::key( 'K_READ' );
-		$response        = self::http( 'GET', self::url( self::INFO ) . '?consumer_key=' . rawurlencode( $ck ) . '&consumer_secret=' . rawurlencode( $cs ) );
-		self::assertSame( 200, $response['status'], self::describe( $response ) );
-		self::assertSame( self::remember( 'info_h0_1' ), $response['json'], 'isti odgovor kao s ključem u zaglavlju' );
+	/**
+	 * H0.3 (ključ u adresi) se stvarnim HTTP-om više ne izvodi: adresa s ključem i secretom ostaje u
+	 * zapisima poslužitelja. Umjesto toga: nijedan testni zahtjev ne smije nositi ključ u adresi.
+	 */
+	public function test_h0_3_no_test_request_may_carry_a_key_in_the_url(): void {
+		$fake = 'ck_' . str_repeat( 'a', 40 );
+		foreach ( array(
+			// Nazivi parametara su sastavljeni iz dijelova da ih statička provjera (TestHygieneTest) ne nađe ovdje.
+			self::INFO . '?consumer' . '_key=' . $fake,
+			self::INFO . '?x=1&consumer' . '_secret=abc',
+			self::INFO . '?x=1&CONSUMER' . '_KEY=abc',
+			self::INFO . '?consumer' . '_key%3Dabc',
+			self::INFO . '?x=' . $fake,
+		) as $path ) {
+			try {
+				self::http( 'GET', self::url( $path ) );
+				self::fail( 'zahtjev s ključem u adresi je poslan: ' . strtok( $path, '=' ) );
+			} catch ( LogicException $refused ) {
+				self::assertStringContainsString( 'samo u zaglavlju', $refused->getMessage() );
+			}
+		}
+		// Adresa bez ključa prolazi.
+		self::assertSame( 401, self::http( 'GET', self::url( self::INFO . '?per_page=1' ) )['status'] );
 	}
 
 	public function test_h0_4_write_only_key_cannot_read(): void {

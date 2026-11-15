@@ -17,4 +17,17 @@ final class ZLogE2ETest extends E2ECase {
 		}
 		self::assertSame( $before, self::suspicious_log_lines(), 'u logovima su se pojavili novi retci o pluginu ili REST ključu' );
 	}
+
+	/**
+	 * Pravilo vlasnika (15. 11. 2026.): ključ se šalje samo u zaglavlju. Ako bi ijedan test poslao ključ
+	 * u adresi, secret bi ostao u zapisu nginxa. Traži se samo zadnjih 8 znakova svakog secreta, a
+	 * ispisuje samo broj redaka.
+	 */
+	public function test_no_current_secret_in_the_web_server_access_log(): void {
+		foreach ( array( 'K_READ', 'K_RW', 'K_WRITE', 'K_CUST' ) as $name ) {
+			$tail = substr( self::key( $name )[1], -8 );
+			self::assertSame( 8, strlen( $tail ) );
+			self::assertSame( 0, self::access_log_lines_containing( $tail ), 'secret ključa ' . $name . ' je u zapisu nginxa' );
+		}
+	}
 }

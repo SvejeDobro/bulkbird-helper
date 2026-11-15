@@ -17,11 +17,13 @@ abstract class E2ECase extends TestCase {
 			'ssh'   => '',
 			'wpcli' => '/home/bulkbird-teststore1/bin/wp83',
 			'logs'  => array( '/home/bulkbird-teststore1/logs/wp-debug.log', '/home/bulkbird-teststore1/logs/php/error.log' ),
+			'access' => '/home/bulkbird-teststore1/logs/nginx/access.log*',
 		),
 		'OLD' => array(
 			'ssh'   => 'teststoreold',
 			'wpcli' => '~/bin/wp81',
 			'logs'  => array( '/home/bulkbird-teststoreold/logs/php/error.log', '/home/bulkbird-teststoreold/logs/wp-debug.log' ),
+			'access' => '/home/bulkbird-teststoreold/logs/nginx/access.log*',
 		),
 	);
 
@@ -101,12 +103,23 @@ abstract class E2ECase extends TestCase {
 	}
 
 	/**
+	 * Ključ se šalje samo u zaglavlju (Basic). Adresa s ključem završava u zapisima poslužitelja,
+	 * zajedno sa secretom, pa se takav zahtjev ne šalje nego test pada (pravilo vlasnika, 15. 11. 2026.).
+	 */
+	protected static function refuse_keys_in_url( string $url ): void {
+		if ( 1 === preg_match( '/consumer_(key|secret)\s*(=|%3D)|\bc[ks]_[0-9a-f]{20,}/i', rawurldecode( $url ) ) ) {
+			throw new LogicException( 'Testni zahtjev ima consumer_key ili consumer_secret u adresi. Ključ se šalje samo u zaglavlju.' );
+		}
+	}
+
+	/**
 	 * Jedan HTTP zahtjev, bez ponavljanja.
 	 *
 	 * @param array<string, mixed> $opts Opcije.
 	 * @return array{status: int, headers: array<string, string>, body: string, json: mixed, seconds: float}
 	 */
 	protected static function http_once( string $method, string $url, array $opts = array() ): array {
+		self::refuse_keys_in_url( $url );
 		$headers = array();
 		$ch      = curl_init( $url );
 		curl_setopt_array(
@@ -224,6 +237,28 @@ abstract class E2ECase extends TestCase {
 		return (int) trim( (string) shell_exec( $cmd ) );
 	}
 
+	/** Broj redaka u zapisima nginxa stranice koji sadrže zadani tekst. Tekst ide standardnim ulazom, ne u naredbu. */
+	protected static function access_log_lines_containing( string $needle ): int {
+		$target = self::TARGETS[ self::target() ];
+		$grep   = 'cat ' . $target['access'] . ' 2>/dev/null | grep -cF -f /dev/stdin';
+		$cmd    = '' === $target['ssh'] ? $grep : 'ssh -o BatchMode=yes ' . escapeshellarg( $target['ssh'] ) . ' ' . escapeshellarg( $grep );
+		$pipes  = array();
+		$proc   = proc_open( $cmd, array( 0 => array( 'pipe', 'r' ), 1 => array( 'pipe', 'w' ), 2 => array( 'pipe', 'w' ) ), $pipes );
+		if ( ! is_resource( $proc ) ) {
+			throw new RuntimeException( 'Zapis nginxa se ne može pročitati.' );
+		}
+		fwrite( $pipes[0], $needle . "\n" );
+		fclose( $pipes[0] );
+		$output = trim( (string) stream_get_contents( $pipes[1] ) );
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+		proc_close( $proc );
+		if ( 1 !== preg_match( '/^\d+$/', $output ) ) {
+			throw new RuntimeException( 'Zapis nginxa se ne može pročitati.' );
+		}
+		return (int) $output;
+	}
+
 	/** Čeka početak novog prozora ograničenja učestalosti (60 s), da test krene s praznim brojačem. */
 	protected static function wait_for_fresh_rate_window(): void {
 		$seconds_into_window = time() % 60;
@@ -262,6 +297,7 @@ abstract class E2ECase extends TestCase {
 		$multi   = curl_multi_init();
 		$handles = array();
 		foreach ( $requests as $i => $request ) {
+			self::refuse_keys_in_url( $request['url'] );
 			$ch = curl_init( $request['url'] );
 			curl_setopt_array(
 				$ch,

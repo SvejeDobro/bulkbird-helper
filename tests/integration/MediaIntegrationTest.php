@@ -446,4 +446,38 @@ final class MediaIntegrationTest extends WP_UnitTestCase {
 		$this->assertSame( 0, (int) get_post( $created )->post_parent );
 		$this->assertSame( $before + 1, $this->attachment_count() );
 	}
+
+	public function test_h2_70_not_signed_in_or_not_allowed_wins_over_an_invalid_parameter(): void {
+		$this->skip_unless_supported();
+		$post = static function (): WP_REST_Response {
+			$request = new WP_REST_Request( 'POST', '/bulkbird/v1/media' );
+			$request->set_body_params( array( 'client_upload_id' => 'abc' ) );
+			return rest_do_request( $request );
+		};
+
+		wp_set_current_user( 0 );
+		$this->assertSame( 401, $post()->get_status() );
+		$this->assertSame( 'bulkbird_unauthorized', $post()->get_data()['code'] );
+		$this->assertSame( 401, $this->media( array( 'per_page' => 'abc' ) )->get_status() );
+
+		foreach ( array( 'author', 'customer', 'subscriber' ) as $role ) {
+			$this->as_role( $role );
+			$this->assertSame( 403, $post()->get_status(), $role );
+			$this->assertSame( 'bulkbird_forbidden', $post()->get_data()['code'], $role );
+			$this->assertSame( 403, $this->media( array( 'per_page' => 'abc' ) )->get_status(), $role );
+		}
+
+		// Tko smije, i dalje dobiva grešku parametra.
+		$this->as_role( 'shop_manager' );
+		$this->assertSame( 400, $post()->get_status() );
+		$this->assertSame( 'rest_invalid_param', $post()->get_data()['code'] );
+		$this->assertSame( 400, $this->media( array( 'per_page' => 'abc' ) )->get_status() );
+
+		// Tuđe putanje se ponašaju kao i prije: WordPress i dalje prvo javlja neispravan parametar.
+		wp_set_current_user( 0 );
+		$foreign = new WP_REST_Request( 'POST', '/wp/v2/posts' );
+		$foreign->set_body_params( array( 'status' => 'nije-status' ) );
+		$this->assertSame( 400, rest_do_request( $foreign )->get_status() );
+	}
 }
+

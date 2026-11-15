@@ -9,7 +9,10 @@ Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika pr
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.2.0` (faza 0: `/info`; faze 1 i 2: `/media`)
+- Verzija plugina: `0.2.1` (faza 0: `/info`; faze 1 i 2: `/media`)
+- **Ugovor je isti od `0.2.0`.** `0.2.1` mijenja samo redoslijed provjere: zahtjev bez prijave ili korisnika
+  bez prava dobiva 401 odnosno 403 i kad mu je neki parametar neispravan (u `0.2.0` je tada dobivao 400).
+  Kodovi i statusi se ne mijenjaju; tko smije, za neispravan parametar i dalje dobiva 400.
 
 ## 1. Otkrivanje
 
@@ -97,7 +100,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 
 ```json
 {
-    "plugin_version": "0.2.0",
+    "plugin_version": "0.2.1",
     "api_version": 1,
     "features": ["media.read", "media.upload"],
     "wordpress_version": "7.1.4",
