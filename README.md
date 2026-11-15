@@ -23,6 +23,8 @@ bin/deploy.sh v0.1.0 new|old     # postavljanje samo iz oznake; ne aktivira plug
 |---|---|
 | [docs/spec-v1.md](docs/spec-v1.md) | specifikacija v1 |
 | [docs/scenarios-faza0.md](docs/scenarios-faza0.md) | scenariji faze 0 (H0.1–H0.91) i odluke |
+| [docs/scenarios-faza1-2.md](docs/scenarios-faza1-2.md) | scenariji faza 1 i 2 (`GET` i `POST /media`) — na potvrdu |
+| [docs/measurements/faza0.md](docs/measurements/faza0.md) | mjerenje učinka, faza 0 |
 | [docs/api-v1.md](docs/api-v1.md) | ugovor API-ja v1 (jedini izvor istine za Bulkbird stranu) |
 | [CLAUDE.md](CLAUDE.md) | pravila rada u ovom repozitoriju |
 
