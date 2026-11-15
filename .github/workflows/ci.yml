@@ -51,3 +51,48 @@ jobs:
         run: bin/build-zip.sh
       - name: Namjerni kvarovi (H0.81–H0.90)
         run: bin/run-faults.sh
+
+  integration:
+    name: Integracija — WP ${{ matrix.wp }}, WC ${{ matrix.wc }}, PHP ${{ matrix.php }}${{ matrix.multisite == '1' && ', multisite' || '' }}${{ matrix.without_wc == '1' && ', bez WooCommercea' || '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.1', wp: '6.4.14', wc: '8.0.3', multisite: '0', without_wc: '0' }
+          - { php: '8.3', wp: 'latest', wc: 'latest', multisite: '0', without_wc: '0' }
+          - { php: '8.1', wp: '6.4.14', wc: '8.0.3', multisite: '1', without_wc: '0' }
+          - { php: '8.3', wp: 'latest', wc: 'latest', multisite: '1', without_wc: '0' }
+          - { php: '8.1', wp: '6.4.14', wc: '8.0.3', multisite: '0', without_wc: '1' }
+          - { php: '8.3', wp: 'latest', wc: 'latest', multisite: '0', without_wc: '1' }
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          # Lozinka vrijedi samo za privremeni kontejner ovog posla; nije tajna.
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mysqli
+          coverage: none
+          tools: composer:v2, wp-cli
+      - run: composer install --no-interaction --no-progress
+      - name: WordPress, WooCommerce i wp-phpunit
+        run: bin/ci-prepare-wp.sh "${{ matrix.wp }}" "${{ matrix.wc }}"
+      - name: Integracijski testovi (H0.77)
+        env:
+          WP_TESTS_CONFIG_FILE_PATH: /tmp/wordpress/wp-tests-config.php
+          WP_MULTISITE: ${{ matrix.multisite }}
+          BBH_WITHOUT_WC: ${{ matrix.without_wc }}
+        run: vendor/bin/phpunit -c phpunit-integration.xml.dist
