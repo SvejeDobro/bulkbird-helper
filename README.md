@@ -7,13 +7,23 @@ i zbirnu prodaju izračunatu na serveru. Bulkbird radi i bez njega; plugin samo 
 Načela: bez sučelja, nula CSS-a i JS-a, nula opterećenja stranica za kupce, ništa ne briše u trgovini,
 bez osobnih podataka u odgovorima, autentikacija postojećim WooCommerce REST ključem.
 
-**Status: u pripremi.** Koda plugina još nema. Scenariji faze 0 su prihvaćeni; izvedba počinje na poziv
-vlasnika projekta.
+**Status: faza 0 u izvedbi.** Kandidat `0.1.0-rc.1` (autentikacija WooCommerce ključem i `GET /bulkbird/v1/info`).
+
+Provjere (sve se pokreću i u CI-ju):
+
+```
+composer check    # sintaksa na PHP 8.1–8.4, PHPCS (WordPress standard), PHPStan razina 8, jedinični testovi, čuvari
+composer faults   # namjerni kvarovi: svaki mora srušiti provjere
+composer e2e      # stvarni HTTP zahtjevi prema testnoj stranici (BBH_TARGET=NEW|OLD; treba test.env)
+bin/build-zip.sh v0.1.0          # paket iz oznake + SHA-256
+bin/deploy.sh v0.1.0 new|old     # postavljanje samo iz oznake; ne aktivira plugin
+```
 
 | Dokument | Sadržaj |
 |---|---|
 | [docs/spec-v1.md](docs/spec-v1.md) | specifikacija v1 |
 | [docs/scenarios-faza0.md](docs/scenarios-faza0.md) | scenariji faze 0 (H0.1–H0.91) i odluke |
+| [docs/api-v1.md](docs/api-v1.md) | ugovor API-ja v1 (jedini izvor istine za Bulkbird stranu) |
 | [CLAUDE.md](CLAUDE.md) | pravila rada u ovom repozitoriju |
 
 Najniže verzije: WordPress 6.4, WooCommerce 8.0, PHP 8.1. Licenca: GPLv2 ili novija.
