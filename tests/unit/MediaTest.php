@@ -214,9 +214,12 @@ final class MediaTest extends TestCase {
 
 	public function test_h1_34_only_listed_image_types_and_no_trash(): void {
 		$parts = Media_Library::where( array(), self::ALL );
-		self::assertStringContainsString( "p.post_type = 'attachment'", $parts['where'] );
-		self::assertStringContainsString( 'p.post_mime_type IN (%s, %s, %s, %s, %s)', $parts['where'] );
-		self::assertStringContainsString( "p.post_status IN ('inherit', 'private')", $parts['where'] );
+		self::assertSame(
+			"p.post_type = 'attachment' AND p.post_status IN ('inherit', 'private') AND p.post_mime_type IN (%s, %s, %s, %s, %s)",
+			$parts['where'],
+			'uvjet mora biti točno ovaj: bez OR i bez drugih vrsta zapisa'
+		);
+		self::assertStringNotContainsString( ' OR ', Media_Library::where( array( 'modified_after' => '2026-01-01 00:00:00' ), self::ALL )['where'] );
 		self::assertSame( self::ALL, $parts['values'] );
 		self::assertSame( self::ALL, Media_Rules::listed_mime_types() );
 	}
