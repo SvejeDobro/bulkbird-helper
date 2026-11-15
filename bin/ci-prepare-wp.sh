@@ -5,6 +5,7 @@
 set -euo pipefail
 WP_VERSION="${1:-latest}"; WC_VERSION="${2:-latest}"
 WP_DIR="${WP_DIR:-/tmp/wordpress}"
+PHP_BIN="$(command -v php)"   # u CI-ju: PHP iz koraka setup-php
 
 mkdir -p "$WP_DIR"
 if [ "$WP_VERSION" = "latest" ]; then
@@ -35,11 +36,14 @@ define( 'DB_COLLATE', '' );
 define( 'WP_TESTS_DOMAIN', 'example.org' );
 define( 'WP_TESTS_EMAIL', 'admin@example.org' );
 define( 'WP_TESTS_TITLE', 'Bulkbird Helper tests' );
-define( 'WP_PHP_BINARY', 'php' );
+define( 'WP_PHP_BINARY', '$PHP_BIN' );
 define( 'WP_DEBUG', true );
 PHP
 
 # wp-phpunit u grani koja odgovara verziji WordPressa (npr. 6.4.14 -> ~6.4.0).
 BRANCH=$(echo "$RESOLVED" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
-composer require --dev --no-interaction --no-progress "wp-phpunit/wp-phpunit:~$BRANCH.0"
+if ! composer require --dev --no-interaction --no-progress "wp-phpunit/wp-phpunit:~$BRANCH.0"; then
+  echo "wp-phpunit ~$BRANCH.0 nije dostupan; uzimam najnoviji" >&2
+  composer require --dev --no-interaction --no-progress "wp-phpunit/wp-phpunit:*"
+fi
 echo "WordPress $RESOLVED, WooCommerce $(sed -nE 's/^ \* Version: (.*)$/\1/p' "$WP_DIR/wp-content/plugins/woocommerce/woocommerce.php"), wp-phpunit ~$BRANCH.0"
