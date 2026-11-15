@@ -47,16 +47,15 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizv
 
 ## Stanje
 
-Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`) su na grani `main` (oznake `v0.1.0`, `v0.2.0`); `0.2.1` je aktivan na
+Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`) su na grani `main` (oznake `v0.1.0`, `v0.2.0`); `0.3.0` je aktivan na
 obje testne stranice. **Plugin miruje** (odluka vlasnika 15. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik
 ne odluči. Bulkbird program koristi `0.2.0` prema konačnom ugovoru `docs/api-v1.md`; ugovor se mijenja samo
 uz odobrenje vlasnika.
 
 - `0.2.1` (isti ugovor; 401/403 prije 400) je izdan i aktivan na obje stranice (oznaka `v0.2.1`).
-- Grana `paket-0.3.0`: `GET /media/uploads/<client_upload_id>` (provjera ishoda prijenosa čitanjem), nacrt
-  ugovora u poglavlju 9. **Ne tagira se, ne spaja u main i ne postavlja na stranice dok vlasnik ne odobri.**
-  `PATCH /media/<id>` i skupna provjera ostaju samo u `docs/proposals/`.
-- Na stranicama je `0.2.1`: testovi stvarnim HTTP-om s grane `paket-0.3.0` traže `BBH_EXPECT_VERSION=0.2.1`.
+- `0.3.0` (`GET /media/uploads/<client_upload_id>`, provjera ishoda prijenosa čitanjem; ugovor poglavlje 9) je
+  izdan (oznaka `v0.3.0`) i aktivan na obje stranice. `PATCH /media/<id>` i skupna provjera ostaju samo u
+  `docs/proposals/`.
 
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 

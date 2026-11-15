@@ -5,13 +5,12 @@ Faza 0 (`/info`, autentikacija) je potvrđena stvarnim HTTP zahtjevima na obje t
 WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
 **Poglavlja 6–8 (`/media`, ograničenje učestalosti) — konačno, verzija `0.2.0`** (odluke vlasnika 15. 11. 2026.); potvrđena
 stvarnim HTTP zahtjevima na obje testne stranice.
-**Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) je NACRT za `0.3.0`**: izvedeno na grani `paket-0.3.0`, nije izdano
-ni postavljeno na trgovine dok vlasnik ne odobri.
+**Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.2.1` (faza 0: `/info`; faze 1 i 2: `/media`)
+- Verzija plugina: `0.3.0` (faza 0: `/info`; faze 1 i 2: `/media`; `0.3.0`: stanje prijenosa)
 - **Ugovor je isti od `0.2.0`.** `0.2.1` mijenja samo redoslijed provjere: zahtjev bez prijave ili korisnika
   bez prava dobiva 401 odnosno 403 i kad mu je neki parametar neispravan (u `0.2.0` je tada dobivao 400).
   Kodovi i statusi se ne mijenjaju; tko smije, za neispravan parametar i dalje dobiva 400.
@@ -78,7 +77,7 @@ Ne upisuje ništa u bazu.
 |---|---|---|
 | `plugin_version` | tekst | verzija plugina (SemVer), npr. `0.1.0` |
 | `api_version` | cijeli broj | `1`; mijenja se samo pri nekompatibilnoj promjeni |
-| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0` (nacrt): i `media.upload_status`. Slijede: `changes` (faza 3), `sales` (faza 4) |
+| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. Slijede: `changes` (faza 3), `sales` (faza 4) |
 | `wordpress_version` | tekst | npr. `7.1.4` |
 | `woocommerce_version` | tekst | npr. `11.3.0` |
 | `php_version` | tekst | `glavna.sporedna.izdanje`, bez dodataka distribucije, npr. `8.3.36` |
@@ -102,7 +101,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 
 ```json
 {
-    "plugin_version": "0.2.1",
+    "plugin_version": "0.3.0",
     "api_version": 1,
     "features": ["media.read", "media.upload"],
     "wordpress_version": "7.1.4",
@@ -257,7 +256,7 @@ zaštita trgovine od pretjeranog prometa, ne sigurnosna granica; provjere ključ
 Zahtjevi bez prijave (401) i zahtjevi korisnika bez prava (403) se ne broje. Trgovina može promijeniti
 ograničenja filterom `bulkbird_helper_rate_limits`, pa se Bulkbird oslanja na `Retry-After`, ne na brojke.
 
-## 9. `GET /bulkbird/v1/media/uploads/<client_upload_id>` (NACRT za `0.3.0`; `features` sadrži `media.upload_status`)
+## 9. `GET /bulkbird/v1/media/uploads/<client_upload_id>` (od `0.3.0`; `features` sadrži `media.upload_status`)
 
 Provjera ishoda prijenosa čitanjem, bez ponovnog slanja datoteke. Namjena: veza se prekinula prije
 odgovora na `POST /media`, klijent se srušio usred niza prijenosa ili je odgovor bio nejasan (413 bez

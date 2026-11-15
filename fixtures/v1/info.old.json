@@ -1,9 +1,10 @@
 {
-    "plugin_version": "0.2.1",
+    "plugin_version": "0.3.0",
     "api_version": 1,
     "features": [
         "media.read",
-        "media.upload"
+        "media.upload",
+        "media.upload_status"
     ],
     "wordpress_version": "6.4.14",
     "woocommerce_version": "8.0.3",

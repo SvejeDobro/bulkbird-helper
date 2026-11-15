@@ -266,8 +266,7 @@ provjera i `PATCH /media/<id>` nisu dio 0.3.0; provjera se ne broji u 30 prijeno
 Namjerni kvarovi: H2.71 (značajka nije navedena), H2.73 (smeće kao spremljeno), H2.74 (traje kao spremljeno),
 H2.75 (stavka i za sliku u smeću), H2.76a (dovoljna jedna sposobnost), H2.76b (prima bilo kakav ID).
 
-Poznata praznina: testovi stvarnim HTTP-om za ovu putanju postoje, ali se izvode tek kad 0.3.0 bude na
-testnim stranicama (do tada se preskaču). Stanje `in_progress` stvarnim HTTP-om nije izvedivo pouzdano
+Poznata praznina: stanje `in_progress` stvarnim HTTP-om nije izvedivo pouzdano
 (traži zahtjev koji traje); pokriva ga integracijski test koji sam drži zaključavanje.
 
 ## Poznate praznine (stanje 15. 11. 2026.)
