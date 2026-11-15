@@ -1,6 +1,6 @@
 # Bulkbird Helper — specifikacija v1
 
-Verzija dokumenta: 1 (14. 11. 2026.) · Status: na potvrdu
+Verzija dokumenta: 1.1 (15. 11. 2026.; usklađeno s docs/api-v1.md u poglavljima 2 i 3.1) · Status: na potvrdu
 Odluke: zaseban repozitorij, WP 6.4+ / WC 8.0+ / PHP 8.1+, prva verzija = čitanje + prijenos slika.
 
 ## 1. Svrha i načela
@@ -57,7 +57,11 @@ Svi odgovori su JSON. Greške u WordPress obliku (`code`, `message`, `data.statu
 
 Sposobnost: `manage_woocommerce`.
 
-Vraća: `plugin_version`, `api_version`, `features` (popis uključenih funkcija, npr. `media.read`, `media.upload`, `changes`, `sales`), verzije WordPressa, WooCommercea i PHP-a, HPOS da/ne, vremensku zonu i valutu trgovine, `max_upload_bytes`, `memory_limit`, `max_execution_time`, prepoznate pluginove važne Bulkbirdu (page builderi, SEO, WPML/Polylang, cache pluginovi, Omnibus) kao popis sluga i verzija, stanje Analytics lookup tablica (potpune / u uvozu).
+Vraća: `plugin_version`, `api_version`, `features` (popis uključenih funkcija, npr. `media.read`, `media.upload`, `changes`, `sales`), verzije WordPressa, WooCommercea i PHP-a, HPOS da/ne, vremensku zonu i valutu trgovine, `max_upload_bytes`, `memory_limit` (cijeli broj u bajtovima; `-1` = bez ograničenja), `max_execution_time`, prepoznate pluginove važne Bulkbirdu (page builderi, SEO, WPML/Polylang, cache pluginovi, Omnibus) kao popis sluga i verzija, stanje Analytics lookup tablica `analytics_lookup`: `complete` (potpune), `importing` (u uvozu) ili `unknown` (WooCommerce ne nudi podatak).
+
+`POST /info` ne postoji. S ključem koji ima samo dozvolu čitanja WooCommerce takav zahtjev odbija s 401 (`woocommerce_rest_authentication_error`) prije nego što WordPress potraži putanju; s ključem za pisanje odgovor je 404.
+
+(Usklađeno s `docs/api-v1.md`; tri razlike odobrio vlasnik projekta 15. 11. 2026.)
 
 Ne vraća: putanje na disku, tajne, korisnike, ništa iz wp-config.php.
 

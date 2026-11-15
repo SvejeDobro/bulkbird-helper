@@ -51,24 +51,6 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 		$out['loaded_from'] .= ', putanje registrirane naknadno';
 	}
 
-	// H0.59: nakon registracije putanja (prije poziva ijedne naše putanje) učitana je samo glavna datoteka.
-	$main_dir                            = dirname( (string) ( new ReflectionFunction( 'Bulkbird\Helper\is_own_route' ) )->getFileName() );
-	$out['plugin_files_after_routes']    = array_values(
-		array_map(
-			static fn( $f ) => substr( $f, strlen( $main_dir ) + 1 ),
-			array_filter( get_included_files(), static fn( $f ) => 0 === strpos( $f, $main_dir . '/' ) && false === strpos( $f, '/tests/' ) )
-		)
-	);
-	// Tuđa REST putanja ne smije učitati ništa naše.
-	wp_set_current_user( 0 );
-	rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/types' ) );
-	$out['plugin_files_after_foreign_route'] = array_values(
-		array_map(
-			static fn( $f ) => substr( $f, strlen( $main_dir ) + 1 ),
-			array_filter( get_included_files(), static fn( $f ) => 0 === strpos( $f, $main_dir . '/' ) && false === strpos( $f, '/tests/' ) )
-		)
-	);
-
 	// H0.75: svaka putanja u bulkbird/ ima permission_callback koji nije __return_true.
 	$routes = array();
 	foreach ( $server->get_routes() as $route => $handlers ) {

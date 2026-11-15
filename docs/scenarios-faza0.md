@@ -56,7 +56,7 @@ Svaki scenarij se izvodi stvarnim HTTP zahtjevom na NOVA i STARA.
 | H0.6 | K-NEPOZNAT (ključ koji ne postoji) | 401, `bulkbird_unauthorized`; tijelo bez ikakvih podataka iz `/info` |
 | H0.7 | Bez ključa i bez kolačića | 401, `bulkbird_unauthorized` |
 | H0.8 | K-CUST (valjan ključ, korisnik bez sposobnosti) | 403, `bulkbird_forbidden` |
-| H0.9 | K-READ, `POST /info` (metoda koja ne postoji na putanji) | 404 ili 405 iz WordPressa; nikad 200 i nikad izvršavanje |
+| H0.9 | `POST /info` (metoda koja ne postoji na putanji) | s K-READ: 401 `woocommerce_rest_authentication_error` (WooCommerce odbija ključ bez dozvole pisanja prije traženja putanje; odobreno 15. 11. 2026.); s K-RW: 404; nikad 200 i nikad izvršavanje |
 | H0.10 | K-READ na izmišljenu putanju `/bulkbird/v1/nepostoji` | 404 `rest_no_route` |
 | H0.11 | Prijava kolačićem korisnika Shop manager (`bulkbird-test-shopmgr`) + valjan `X-WP-Nonce`, bez ključa | 200. Dodatna provjera: isto s administratorom → 200 |
 | H0.12 | Kolačić korisnika Shop manager bez noncea | 401 (WordPress zahtjev tretira kao neprijavljen) |

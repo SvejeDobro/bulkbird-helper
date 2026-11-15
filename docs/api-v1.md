@@ -1,7 +1,8 @@
 # Bulkbird Helper — ugovor API-ja v1
 
-Status: **nacrt faze 0** (14 polja `/info` i kodovi grešaka potvrđeni unutar WordPressa 7.1 / WooCommercea 11.3;
-potvrda stvarnim HTTP zahtjevima na obje testne stranice slijedi nakon aktivacije plugina).
+Status: **faza 0 — odobreno** (razlike prema specifikaciji odobrio vlasnik projekta 15. 11. 2026.).
+Potvrđeno stvarnim HTTP zahtjevima na staroj testnoj stranici (WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1);
+potvrda na teststore1 (WordPress 7.1, WooCommerce 11.3, PHP 8.3) slijedi nakon aktivacije plugina.
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
@@ -29,7 +30,7 @@ Samo preko HTTPS-a. Dozvola ključa vrijedi i ovdje: `GET`/`HEAD` traže `read` 
 kojem ključ pripada (za `/info`: `manage_woocommerce`, dakle Shop manager ili administrator).
 
 Podržan je i oblik adrese `https://<trgovina>/?rest_route=/bulkbird/v1/info` (trgovine bez lijepih poveznica);
-potvrda na WooCommerceu 8.0 slijedi.
+potvrđeno na WooCommerceu 8.0.3.
 
 Prijava kolačićem (WP admin u pregledniku) radi uz zaglavlje `X-WP-Nonce`, kao i za ostali WordPress REST.
 
@@ -108,13 +109,16 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 }
 ```
 
-Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.new.json` i `fixtures/v1/info.old.json`
-(nastaju nakon aktivacije plugina na testnim stranicama).
+Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.old.json` (stara testna stranica) i
+`fixtures/v1/info.new.json` (teststore1; nastaje nakon aktivacije plugina ondje). `fixtures/v1/info.json`
+je kopija primjera s najnovije okoline.
 
-## 6. Razlike prema specifikaciji v1 (za odobrenje)
+## 6. Odobrene razlike prema prvoj inačici specifikacije
 
-| Tema | Specifikacija | Ovaj ugovor | Razlog |
+Odobrio vlasnik projekta 15. 11. 2026.; `docs/spec-v1.md` je usklađen.
+
+| Tema | Prva inačica specifikacije | Ugovor | Razlog |
 |---|---|---|---|
-| `analytics_lookup` | potpune / u uvozu | `complete`, `importing`, `unknown` | starije verzije WooCommercea možda ne nude podatak; „ne znam” je poštenije od pogađanja |
-| `memory_limit` | nije navedena vrsta | cijeli broj u bajtovima, `-1` bez ograničenja | isti oblik kao `max_upload_bytes`; Bulkbird ne mora tumačiti zapis `256M` |
-| `POST /info` s ključem samo za čitanje | 404 ili 405 | 401 `woocommerce_rest_authentication_error` | WooCommerce provjerava dozvolu ključa po metodi prije nego što WordPress traži putanju |
+| `analytics_lookup` | potpune / u uvozu | `complete`, `importing`, `unknown` | stanje se čita iz funkcije WooCommercea koja nije dio javnog API-ja; ako je neka verzija nema, „ne znam” je poštenije od pogađanja |
+| `memory_limit` | vrsta nije navedena | cijeli broj u bajtovima, `-1` bez ograničenja | isti oblik kao `max_upload_bytes`; Bulkbird ne mora tumačiti zapis `256M` |
+| `POST /info` s ključem samo za čitanje | 404 ili 405 | 401 `woocommerce_rest_authentication_error` (s ključem za pisanje 404) | WooCommerce provjerava dozvolu ključa po metodi prije nego što WordPress traži putanju |
