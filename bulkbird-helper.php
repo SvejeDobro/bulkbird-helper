@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.2.0-rc.3
+ * Version:              0.2.0
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.2.0-rc.3';
+const VERSION           = '0.2.0';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';

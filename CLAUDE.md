@@ -47,9 +47,10 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizv
 
 ## Stanje
 
-Faza 0 je izvedena i prihvaćena (`0.1.0`). Faze 1 i 2 (`GET` i `POST /media`, verzija `0.2.0`): scenariji su
-prihvaćeni (`docs/scenarios-faza1-2.md`), izvedba je na grani `paket-0.2.0`. Aktivaciju plugina i mjerni
-mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
+Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`: `GET` i `POST /media`, ograničenje učestalosti) su izvedene i na
+grani `main` (oznake `v0.1.0`, `v0.2.0`). `0.2.0` je aktivan na obje testne stranice. Faze 3 i 4 se ne
+počinju dok vlasnik ne odluči. Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno,
+svaki put i za svaku stranicu.
 
 ## Gdje je što
 

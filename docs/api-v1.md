@@ -3,12 +3,13 @@
 Status: **faza 0 — odobreno** (razlike prema specifikaciji odobrio vlasnik projekta 15. 11. 2026.).
 Faza 0 (`/info`, autentikacija) je potvrđena stvarnim HTTP zahtjevima na obje testne stranice: WordPress 6.4.14 /
 WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
-**Poglavlja 6–8 (`/media`, ograničenje učestalosti) su nacrt paketa `0.2.0`** dok vlasnik ne pregleda izvještaj.
+**Poglavlja 6–8 (`/media`, ograničenje učestalosti) — konačno, verzija `0.2.0`** (odluke vlasnika 15. 11. 2026.); potvrđena
+stvarnim HTTP zahtjevima na obje testne stranice.
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.2.0-rc.3` (faza 0: `/info`; faze 1 i 2: `/media`)
+- Verzija plugina: `0.2.0` (faza 0: `/info`; faze 1 i 2: `/media`)
 
 ## 1. Otkrivanje
 
@@ -96,7 +97,7 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 
 ```json
 {
-    "plugin_version": "0.2.0-rc.3",
+    "plugin_version": "0.2.0",
     "api_version": 1,
     "features": ["media.read", "media.upload"],
     "wordpress_version": "7.1.4",
