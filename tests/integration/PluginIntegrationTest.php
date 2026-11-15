@@ -89,7 +89,7 @@ final class PluginIntegrationTest extends WP_UnitTestCase {
 			$this->assertSame( 200, $response->get_status(), $role );
 			$data = $response->get_data();
 			$this->assertSame(
-				array( 'plugin_version', 'api_version', 'features', 'wordpress_version', 'woocommerce_version', 'php_version', 'hpos_enabled', 'timezone', 'currency', 'max_upload_bytes', 'memory_limit', 'max_execution_time', 'detected_plugins', 'analytics_lookup' ),
+				array( 'plugin_version', 'api_version', 'features', 'wordpress_version', 'woocommerce_version', 'php_version', 'hpos_enabled', 'timezone', 'currency', 'max_upload_bytes', 'memory_limit', 'max_execution_time', 'detected_plugins', 'analytics_lookup', 'media' ),
 				array_keys( $data )
 			);
 			$this->assertSame( Bulkbird\Helper\VERSION, $data['plugin_version'] );
@@ -116,6 +116,10 @@ final class PluginIntegrationTest extends WP_UnitTestCase {
 		}
 		$this->info();
 		foreach ( (array) $wpdb->queries as $query ) {
+			// Jedini dopušteni upis je brojač učestalosti u vlastitoj tablici.
+			if ( false !== strpos( (string) $query[0], 'bulkbird_rate' ) ) {
+				continue;
+			}
 			$this->assertMatchesRegularExpression( '/^\s*(SELECT|SHOW)\b/i', (string) $query[0], 'GET /info smije samo čitati' );
 		}
 	}
@@ -149,7 +153,7 @@ final class PluginIntegrationTest extends WP_UnitTestCase {
 		$this->assertCount( 1, $rows );
 		$this->assertSame( 'bulkbird_helper_db_version', $rows[0]['option_name'] );
 		$this->assertContains( $rows[0]['autoload'], array( 'no', 'off' ) );
-		$this->assertSame( array(), $wpdb->get_col( "SHOW TABLES LIKE '{$wpdb->prefix}bulkbird%'" ), 'faza 0 ne stvara tablice' );
+		$this->assertSame( array(), $wpdb->get_col( "SHOW TABLES LIKE '{$wpdb->prefix}bulkbird_changes'" ), 'aktivacija ne stvara tablice' );
 		$this->assertFalse( wp_next_scheduled( 'bulkbird_helper_cleanup' ) );
 	}
 

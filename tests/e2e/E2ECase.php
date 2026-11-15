@@ -85,10 +85,28 @@ abstract class E2ECase extends TestCase {
 	/**
 	 * HTTP zahtjev.
 	 *
-	 * @param array{basic?: array{0: string, 1: string}, headers?: string[], body?: string|array<string, string>} $opts Opcije.
+	 * @param array<string, mixed> $opts Opcije: basic, headers, body (tekst ili polja za multipart; datoteke kao CURLFile), no_retry.
 	 * @return array{status: int, headers: array<string, string>, body: string, json: mixed, seconds: float}
 	 */
 	protected static function http( string $method, string $url, array $opts = array() ): array {
+		$response = self::http_once( $method, $url, $opts );
+		// Svi ključevi istog korisnika dijele ograničenje učestalosti (120/min). Da ostali testovi ne
+		// padaju zbog njega, zahtjev se nakon 429 ponavlja kad istekne Retry-After. Testovi samog
+		// ograničenja to isključuju opcijom 'no_retry'.
+		if ( 429 === $response['status'] && empty( $opts['no_retry'] ) ) {
+			sleep( min( 61, max( 1, (int) ( $response['headers']['retry-after'] ?? 5 ) ) ) + 1 );
+			$response = self::http_once( $method, $url, $opts );
+		}
+		return $response;
+	}
+
+	/**
+	 * Jedan HTTP zahtjev, bez ponavljanja.
+	 *
+	 * @param array<string, mixed> $opts Opcije.
+	 * @return array{status: int, headers: array<string, string>, body: string, json: mixed, seconds: float}
+	 */
+	protected static function http_once( string $method, string $url, array $opts = array() ): array {
 		$headers = array();
 		$ch      = curl_init( $url );
 		curl_setopt_array(
@@ -96,7 +114,7 @@ abstract class E2ECase extends TestCase {
 			array(
 				CURLOPT_CUSTOMREQUEST  => $method,
 				CURLOPT_RETURNTRANSFER => true,
-				CURLOPT_TIMEOUT        => 30,
+				CURLOPT_TIMEOUT        => 180,
 				CURLOPT_NOBODY         => ( 'HEAD' === $method ),
 				CURLOPT_USERAGENT      => 'bulkbird-helper-e2e',
 				CURLOPT_HTTPHEADER     => $opts['headers'] ?? array(),
@@ -204,6 +222,79 @@ abstract class E2ECase extends TestCase {
 		$grep   = "cat $files 2>/dev/null | grep -ciE 'bulkbird-helper|Bulkbird.Helper|c[ks]_[0-9a-f]{8}'";
 		$cmd    = '' === $target['ssh'] ? $grep : 'ssh -o BatchMode=yes ' . escapeshellarg( $target['ssh'] ) . ' ' . escapeshellarg( $grep );
 		return (int) trim( (string) shell_exec( $cmd ) );
+	}
+
+	/** Čeka početak novog prozora ograničenja učestalosti (60 s), da test krene s praznim brojačem. */
+	protected static function wait_for_fresh_rate_window(): void {
+		$seconds_into_window = time() % 60;
+		sleep( 60 - $seconds_into_window + 1 );
+	}
+
+	/**
+	 * Proba medijske biblioteke (bez pamćenja rezultata).
+	 *
+	 * @param int[] $ids Privitci za koje se traže pojedinosti.
+	 * @return array<string, mixed>
+	 */
+	protected static function media_probe( array $ids = array() ): array {
+		return self::wpcli( 'tests/probe/media.php', array( 'BBH_IDS' => implode( ',', $ids ) ) );
+	}
+
+	/**
+	 * Briše testne slike (naslov "bbh-test-…" I meta _bulkbird_upload_id) prema trajnom odobrenju vlasnika (P17).
+	 * Skripta prije brisanja ispisuje broj i ID-jeve.
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected static function cleanup_test_media(): array {
+		$result = self::wpcli( 'tests/tools/cleanup-test-media.php' );
+		fwrite( STDERR, sprintf( "\n[čišćenje %s] testnih slika: %d; ID: %s; obrisano: %d; nije uspjelo: %d\n", self::target(), $result['count'], $result['ids'] ? implode( ', ', $result['ids'] ) : '-', count( $result['deleted'] ), count( $result['failed'] ) ) );
+		return $result;
+	}
+
+	/**
+	 * Više zahtjeva istovremeno (za provjeru zaključavanja po client_upload_id).
+	 *
+	 * @param array<int, array{url: string, basic: array{0: string, 1: string}, body: array<string, mixed>}> $requests Zahtjevi.
+	 * @return array<int, array{status: int, json: mixed}>
+	 */
+	protected static function http_parallel_post( array $requests ): array {
+		$multi   = curl_multi_init();
+		$handles = array();
+		foreach ( $requests as $i => $request ) {
+			$ch = curl_init( $request['url'] );
+			curl_setopt_array(
+				$ch,
+				array(
+					CURLOPT_POST           => true,
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_TIMEOUT        => 180,
+					CURLOPT_USERAGENT      => 'bulkbird-helper-e2e',
+					CURLOPT_USERPWD        => $request['basic'][0] . ':' . $request['basic'][1],
+					CURLOPT_POSTFIELDS     => $request['body'],
+				)
+			);
+			curl_multi_add_handle( $multi, $ch );
+			$handles[ $i ] = $ch;
+		}
+		do {
+			$status = curl_multi_exec( $multi, $running );
+			if ( $running ) {
+				curl_multi_select( $multi, 1.0 );
+			}
+		} while ( $running && CURLM_OK === $status );
+
+		$out = array();
+		foreach ( $handles as $i => $ch ) {
+			$out[ $i ] = array(
+				'status' => (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE ),
+				'json'   => json_decode( (string) curl_multi_getcontent( $ch ), true ),
+			);
+			curl_multi_remove_handle( $multi, $ch );
+			curl_close( $ch );
+		}
+		curl_multi_close( $multi );
+		return $out;
 	}
 
 	protected static function remember( string $name, $value = null ) {

@@ -107,12 +107,19 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 		$logged_before = is_array( $wpdb->queries ) ? count( $wpdb->queries ) : 0;
 		$second        = $call( $shopmgr_id );
 		$verbs         = array();
+		$rate_queries = 0;
 		foreach ( array_slice( (array) $wpdb->queries, $logged_before ) as $query ) {
+			// Brojač učestalosti u vlastitoj tablici je jedini dopušteni upis (od 0.2.0).
+			if ( false !== strpos( (string) $query[0], 'bulkbird_rate' ) ) {
+				++$rate_queries;
+				continue;
+			}
 			$verb           = strtoupper( (string) strtok( ltrim( (string) $query[0] ), " \n\t(" ) );
 			$verbs[ $verb ] = ( $verbs[ $verb ] ?? 0 ) + 1;
 		}
 		$out['info_shopmgr_second'] = array(
 			'queries'      => $second['queries'],
+			'rate_queries' => $rate_queries,
 			'query_verbs'  => $verbs,
 			'write_queries' => array_sum( array_diff_key( $verbs, array( 'SELECT' => 0, 'SHOW' => 0 ) ) ),
 		);
