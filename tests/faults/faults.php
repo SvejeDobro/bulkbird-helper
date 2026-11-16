@@ -276,8 +276,8 @@ return array(
 		'H2.71',
 		'/info ne navodi media.upload_status',
 		'includes/class-info-controller.php',
-		"array( 'media.read', 'media.upload', 'media.upload_status' )",
-		"array( 'media.read', 'media.upload' )",
+		"array( 'media.read', 'media.upload', 'media.upload_status', 'user.unfiltered_html' )",
+		"array( 'media.read', 'media.upload', 'user.unfiltered_html' )",
 	),
 	array(
 		'H2.73',
