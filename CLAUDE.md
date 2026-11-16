@@ -76,7 +76,7 @@ Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki 
 | Demo trgovina | `~/htdocs/teststore1.bulkbird.app` — `https://teststore1.bulkbird.app` |
 | Plugin na trgovini | `wp-content/plugins/bulkbird-helper` — **samo iz git oznake**, nikad uređivati na mjestu |
 | Polazna kopija trgovine | `~/backups/baseline-20261114/` |
-| WordPress debug log | `~/logs/wp-debug.log` |
+| WordPress debug log | `~/logs/wp/wp-debug.log` (od 16. 11. 2026.; u podmapi da ga CloudPanelovo pravilo rotira) |
 | PHP / nginx logovi | `~/logs/php/error.log`, `~/logs/nginx/` (access log sadrži IP adrese — ne ispisivati) |
 | Git udaljeni repozitorij | `git@github-bulkbird-helper:SvejeDobro/bulkbird-helper.git` (deploy ključ, alias u `~/.ssh/config`) |
 

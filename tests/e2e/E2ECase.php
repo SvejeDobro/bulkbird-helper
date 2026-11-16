@@ -16,7 +16,7 @@ abstract class E2ECase extends TestCase {
 		'NEW' => array(
 			'ssh'   => '',
 			'wpcli' => '/home/bulkbird-teststore1/bin/wp83',
-			'logs'  => array( '/home/bulkbird-teststore1/logs/wp-debug.log', '/home/bulkbird-teststore1/logs/php/error.log' ),
+			'logs'  => array( '/home/bulkbird-teststore1/logs/wp/wp-debug.log', '/home/bulkbird-teststore1/logs/php/error.log' ),
 			'access' => '/home/bulkbird-teststore1/logs/nginx/access.log*',
 		),
 		'OLD' => array(
