@@ -57,6 +57,12 @@ uz odobrenje vlasnika.
   izdan (oznaka `v0.3.0`) i aktivan na obje stranice. `PATCH /media/<id>` i skupna provjera ostaju samo u
   `docs/proposals/`.
 
+- Grana `paket-0.4.0`: `/info` dobiva `user.unfiltered_html` (nacrt u ugovoru). **Ne tagira se, ne spaja u main
+  i ne postavlja na stranice dok vlasnik ne odobri.** Na stranicama ostaje `0.3.0`
+  (testovi stvarnim HTTP-om s te grane: `BBH_EXPECT_VERSION=0.3.0`).
+- teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-` (nikad se ne brišu); vidi
+  `~/NOTES-bulkbird.md`.
+
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 
 ## Gdje je što

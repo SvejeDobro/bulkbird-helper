@@ -20,7 +20,8 @@ defined( 'ABSPATH' ) || exit;
 final class Info_Controller {
 
 	/**
-	 * Builds the response. Contains no paths, secrets, users or customer data.
+	 * Builds the response. Contains no paths, secrets or customer data, and nothing that identifies
+	 * a user: of the user behind the key it tells one capability flag and nothing else.
 	 *
 	 * @return \WP_REST_Response
 	 */
@@ -28,7 +29,7 @@ final class Info_Controller {
 		$data = array(
 			'plugin_version'      => VERSION,
 			'api_version'         => API_VERSION,
-			'features'            => array( 'media.read', 'media.upload', 'media.upload_status' ),
+			'features'            => array( 'media.read', 'media.upload', 'media.upload_status', 'user.unfiltered_html' ),
 			'wordpress_version'   => (string) get_bloginfo( 'version' ),
 			'woocommerce_version' => defined( 'WC_VERSION' ) ? (string) WC_VERSION : '',
 			'php_version'         => Environment::php_version(),
@@ -43,6 +44,12 @@ final class Info_Controller {
 			'media'               => array(
 				'upload_mime_types' => Media_Rules::upload_mime_types(),
 				'upload_max_bytes'  => Media_Rules::upload_max_bytes(),
+			),
+			'user'                => array(
+				// What WordPress itself answers for the user behind the key. False means WordPress and
+				// WooCommerce silently strip iframes, scripts, styles and event attributes from what this
+				// user saves. Multisite rules and DISALLOW_UNFILTERED_HTML are already part of the answer.
+				'unfiltered_html' => (bool) current_user_can( 'unfiltered_html' ),
 			),
 		);
 
@@ -106,6 +113,15 @@ final class Info_Controller {
 						'upload_max_bytes'  => array(
 							'type'        => 'integer',
 							'description' => 'Largest file POST /media accepts, in bytes.',
+						),
+					),
+				),
+				'user'                => array(
+					'type'       => 'object',
+					'properties' => array(
+						'unfiltered_html' => array(
+							'type'        => 'boolean',
+							'description' => 'Whether the user behind the key may save unfiltered HTML.',
 						),
 					),
 				),

@@ -33,6 +33,18 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 		'autoload_bytes' => (int) $GLOBALS['wpdb']->get_var( "SELECT SUM(LENGTH(option_value)) FROM {$GLOBALS['wpdb']->options} WHERE autoload IN ('yes','on','auto','auto-on')" ), // phpcs:ignore
 	);
 
+	// H2.81: smije li prvi administrator (isti kojeg testovi prijavljuju kolačićem) spremati nefiltrirani HTML.
+	$admins                          = get_users(
+		array(
+			'role'    => 'administrator',
+			'number'  => 1,
+			'orderby' => 'ID',
+			'fields'  => 'ID',
+		)
+	);
+	$out['admin_unfiltered_html']    = $admins ? user_can( (int) $admins[0], 'unfiltered_html' ) : null;
+	$out['disallow_unfiltered_html'] = defined( 'DISALLOW_UNFILTERED_HTML' ) && DISALLOW_UNFILTERED_HTML;
+
 	// H0.38: redak u popisu pluginova nema dodatnih poveznica (npr. "Postavke").
 	$out['action_links'] = array_keys( (array) apply_filters( 'plugin_action_links_' . $basename, array(), $basename, array(), 'all' ) );
 	$out['row_meta']     = array_keys( (array) apply_filters( 'plugin_row_meta', array(), $basename, array(), 'all' ) );

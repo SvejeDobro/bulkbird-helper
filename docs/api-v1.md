@@ -6,6 +6,8 @@ WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
 **Poglavlja 6–8 (`/media`, ograničenje učestalosti) — konačno, verzija `0.2.0`** (odluke vlasnika 15. 11. 2026.); potvrđena
 stvarnim HTTP zahtjevima na obje testne stranice.
 **Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
+**Polje `user.unfiltered_html` u `/info` je NACRT za `0.4.0`**: izvedeno na grani `paket-0.4.0`, nije izdano ni
+postavljeno na trgovine dok vlasnik ne odobri.
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
@@ -77,7 +79,7 @@ Ne upisuje ništa u bazu.
 |---|---|---|
 | `plugin_version` | tekst | verzija plugina (SemVer), npr. `0.1.0` |
 | `api_version` | cijeli broj | `1`; mijenja se samo pri nekompatibilnoj promjeni |
-| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. Slijede: `changes` (faza 3), `sales` (faza 4) |
+| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. `0.4.0` (nacrt): i `user.unfiltered_html`. Slijede: `changes` (faza 3), `sales` (faza 4) |
 | `wordpress_version` | tekst | npr. `7.1.4` |
 | `woocommerce_version` | tekst | npr. `11.3.0` |
 | `php_version` | tekst | `glavna.sporedna.izdanje`, bez dodataka distribucije, npr. `8.3.36` |
@@ -90,6 +92,7 @@ Ne upisuje ništa u bazu.
 | `detected_plugins` | popis objekata `{slug, version}` | **samo** aktivni pluginovi s popisa važnih Bulkbirdu (page builderi, SEO, višejezičnost, cache, Omnibus), poredani po `slug`. Ostali pluginovi trgovine se ne navode. `version` može biti prazan tekst |
 | `analytics_lookup` | tekst | stanje WooCommerce Analytics lookup tablica: `complete`, `importing` ili `unknown` (WooCommerce ne nudi podatak) |
 | `media` | objekt | od `0.2.0`: `upload_mime_types` (popis vrsta koje `POST /media` prima **na ovoj trgovini**) i `upload_max_bytes` (najveća datoteka koju `POST /media` prima = manje od `max_upload_bytes` i 20 MB) |
+| `user` | objekt | od `0.4.0` (nacrt): točno jedno polje, `unfiltered_html` (logička vrijednost): smije li korisnik kojem pripada ključ spremati nefiltrirani HTML, onako kako to kaže WordPress (`current_user_can`), uključujući pravila multisitea i `DISALLOW_UNFILTERED_HTML`. Nikakav drugi podatak o korisniku: ni ime, ni e-mail, ni uloga, ni ID. **Napomena:** ovo ne predviđa ishod spremanja opisa kroz `wc/v3/products`; WooCommerce REST opis čisti svakom korisniku (`docs/measurements/unfiltered-html.md`) |
 
 Bulkbird mora ignorirati polja koja ne poznaje (nova se mogu dodati bez promjene `api_version`).
 

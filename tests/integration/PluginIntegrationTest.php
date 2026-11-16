@@ -89,7 +89,7 @@ final class PluginIntegrationTest extends WP_UnitTestCase {
 			$this->assertSame( 200, $response->get_status(), $role );
 			$data = $response->get_data();
 			$this->assertSame(
-				array( 'plugin_version', 'api_version', 'features', 'wordpress_version', 'woocommerce_version', 'php_version', 'hpos_enabled', 'timezone', 'currency', 'max_upload_bytes', 'memory_limit', 'max_execution_time', 'detected_plugins', 'analytics_lookup', 'media' ),
+				array( 'plugin_version', 'api_version', 'features', 'wordpress_version', 'woocommerce_version', 'php_version', 'hpos_enabled', 'timezone', 'currency', 'max_upload_bytes', 'memory_limit', 'max_execution_time', 'detected_plugins', 'analytics_lookup', 'media', 'user' ),
 				array_keys( $data )
 			);
 			$this->assertSame( Bulkbird\Helper\VERSION, $data['plugin_version'] );
@@ -208,5 +208,49 @@ final class PluginIntegrationTest extends WP_UnitTestCase {
 				}
 			}
 		}
+	}
+
+	public function test_h2_80_to_h2_83_user_unfiltered_html(): void {
+		if ( ! defined( 'WC_VERSION' ) || is_multisite() ) {
+			$this->markTestSkipped( 'Putanja /info ne postoji u ovoj okolini.' );
+		}
+		foreach ( array( 'administrator', 'shop_manager' ) as $role ) {
+			$user_id = self::factory()->user->create( array( 'role' => $role ) );
+			wp_set_current_user( $user_id );
+			$data = $this->info()->get_data();
+
+			$this->assertContains( 'user.unfiltered_html', $data['features'], $role );
+			$this->assertSame( array( 'unfiltered_html' ), array_keys( $data['user'] ), $role . ': točno jedno polje' );
+			$this->assertSame( current_user_can( 'unfiltered_html' ), $data['user']['unfiltered_html'], $role . ': ono što WordPress kaže' );
+			$this->assertSame( 1, $data['api_version'] );
+
+			// Ništa što otkriva tko je korisnik.
+			$user = get_userdata( $user_id );
+			$json = (string) wp_json_encode( $data );
+			foreach ( array( $user->user_login, $user->user_email, $user->display_name, $role ) as $forbidden ) {
+				$this->assertStringNotContainsString( (string) $forbidden, $json, $role );
+			}
+			$this->assertStringNotContainsString( '"id"', strtolower( $json ) );
+		}
+
+		// Zadano u WordPressu (jedna stranica): administrator smije, Shop manager ne.
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->assertTrue( $this->info()->get_data()['user']['unfiltered_html'] );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'shop_manager' ) ) );
+		$this->assertFalse( $this->info()->get_data()['user']['unfiltered_html'] );
+
+		// Trgovina koja to pravo uskrati ili dodijeli (kao DISALLOW_UNFILTERED_HTML ili dodatak za uloge): vrijedi ono što WordPress kaže.
+		$deny = static function ( array $caps, string $cap ): array {
+			return 'unfiltered_html' === $cap ? array( 'do_not_allow' ) : $caps;
+		};
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		add_filter( 'map_meta_cap', $deny, 10, 2 );
+		$this->assertFalse( $this->info()->get_data()['user']['unfiltered_html'] );
+		remove_filter( 'map_meta_cap', $deny, 10 );
+
+		$manager = self::factory()->user->create( array( 'role' => 'shop_manager' ) );
+		get_userdata( $manager )->add_cap( 'unfiltered_html' );
+		wp_set_current_user( $manager );
+		$this->assertTrue( $this->info()->get_data()['user']['unfiltered_html'] );
 	}
 }

@@ -4,7 +4,7 @@ Tags: woocommerce, bulkbird
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ Bulkbird works without it; the plugin only unlocks extra features.
 Requires WooCommerce 8.0 or newer. Multisite is not supported in version 1.
 
 == Changelog ==
+
+= 0.4.0 =
+* GET /bulkbird/v1/info tells whether the user behind the key may save unfiltered HTML (user.unfiltered_html).
 
 = 0.3.0 =
 * GET /bulkbird/v1/media/uploads/<client_upload_id>: the state of an upload, without sending the file again.

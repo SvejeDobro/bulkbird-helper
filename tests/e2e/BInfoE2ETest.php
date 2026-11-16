@@ -37,7 +37,30 @@ final class BInfoE2ETest extends E2ECase {
 		$response = self::info();
 		self::assertSame( 200, $response['status'], self::describe( $response ) );
 		self::assertStringStartsWith( 'application/json', $response['headers']['content-type'] ?? '' );
-		self::assertSame( self::FIELDS, array_keys( $response['json'] ) );
+		self::assertSame( self::fields( (string) $response['json']['plugin_version'] ), array_keys( $response['json'] ) );
+	}
+
+	/** @return string[] Polja odgovora za zadanu verziju plugina. */
+	private static function fields( string $version ): array {
+		return version_compare( $version, '0.4.0', '>=' ) ? array_merge( self::FIELDS, array( 'user' ) ) : self::FIELDS;
+	}
+
+	public function test_h2_80_to_h2_83_user_unfiltered_html(): void {
+		$info = self::info()['json'];
+		if ( version_compare( (string) $info['plugin_version'], '0.4.0', '<' ) ) {
+			self::markTestSkipped( 'Na stranici je plugin stariji od 0.4.0.' );
+		}
+		self::assertContains( 'user.unfiltered_html', $info['features'] );
+		self::assertSame( array( 'unfiltered_html' ), array_keys( $info['user'] ) );
+		// Testni ključ pripada Shop manageru, koji u WordPressu nema unfiltered_html.
+		self::assertFalse( $info['user']['unfiltered_html'] );
+		self::assertSame( self::internal()['shopmgr_caps']['unfiltered_html'] ?? false, $info['user']['unfiltered_html'] );
+
+		// Administrator (kolačić): ono što WordPress kaže za njega.
+		$session = self::session( array( 'BBH_ROLE' => 'administrator' ) );
+		$admin   = self::http( 'GET', self::url( self::INFO ), array( 'headers' => array( 'Cookie: ' . $session['cookie'], 'X-WP-Nonce: ' . $session['nonce'] ) ) );
+		self::assertSame( 200, $admin['status'] );
+		self::assertSame( self::site()['admin_unfiltered_html'] ?? null, $admin['json']['user']['unfiltered_html'] );
 	}
 
 	public function test_h0_22_types(): void {
@@ -65,6 +88,9 @@ final class BInfoE2ETest extends E2ECase {
 		$features = array( 'media.read', 'media.upload' );
 		if ( version_compare( $info['plugin_version'], '0.3.0', '>=' ) ) {
 			$features[] = 'media.upload_status'; // H2.71.
+		}
+		if ( version_compare( $info['plugin_version'], '0.4.0', '>=' ) ) {
+			$features[] = 'user.unfiltered_html'; // H2.80.
 		}
 		self::assertSame( $features, $info['features'] );
 		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $info['media'] ) );

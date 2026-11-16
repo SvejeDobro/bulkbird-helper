@@ -203,6 +203,7 @@ final class AAuthE2ETest extends E2ECase {
 
 		$response = self::http( 'GET', self::url( self::INFO ), array( 'basic' => self::key( 'K_READ' ) ) );
 		self::assertSame( 200, $response['status'], self::describe( $response ) );
-		self::assertCount( 15, (array) $response['json'], 'potpun odgovor: svih 15 polja' );
+		$expected = version_compare( (string) $response['json']['plugin_version'], '0.4.0', '>=' ) ? 16 : 15;
+		self::assertCount( $expected, (array) $response['json'], 'potpun odgovor: sva polja' );
 	}
 }

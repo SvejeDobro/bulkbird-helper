@@ -269,6 +269,21 @@ H2.75 (stavka i za sliku u smeću), H2.76a (dovoljna jedna sposobnost), H2.76b (
 Poznata praznina: stanje `in_progress` stvarnim HTTP-om nije izvedivo pouzdano
 (traži zahtjev koji traje); pokriva ga integracijski test koji sam drži zaključavanje.
 
+## `user.unfiltered_html` u `/info` (`0.4.0`, zadatak vlasnika 16. 11. 2026.)
+
+| ID | Scenarij | Očekivano |
+|---|---|---|
+| H2.80 | `/info` na 0.4.0 | `features` sadrži `user.unfiltered_html`; odgovor ima objekt `user`; `api_version` ostaje 1 |
+| H2.81 | Vrijednost | ono što WordPress kaže za korisnika ključa (`current_user_can`): zadano administrator `true`, Shop manager `false`; uskraćeno (npr. `DISALLOW_UNFILTERED_HTML`) `false`; dodijeljeno Shop manageru `true` |
+| H2.82 | Ništa drugo o korisniku | objekt `user` ima točno jedno polje; odgovor ne sadrži ime, e-mail, ulogu ni ID |
+| H2.83 | Stvarnim HTTP-om (kad 0.4.0 bude na stranicama) | ključ Shop managera: `false`; administrator (kolačić): ono što WordPress kaže |
+
+Namjerni kvarovi: H2.80 (značajka nije navedena), H2.81a (uvijek `true`), H2.81b (izvedeno iz druge sposobnosti),
+H2.82 (objekt otkriva ID korisnika).
+
+Nalaz mjerenja (`docs/measurements/unfiltered-html.md`): WooCommerce REST opis čisti svakom korisniku, pa ovo
+polje ne predviđa ishod spremanja kroz `wc/v3/products`.
+
 ## Poznate praznine (stanje 15. 11. 2026.)
 
 | Scenarij | Što nije izvedeno | Razlog | Što ga ipak pokriva |

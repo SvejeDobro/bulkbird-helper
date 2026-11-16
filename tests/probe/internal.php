@@ -96,6 +96,7 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 	}
 	if ( $shopmgr_id > 0 ) {
 		$out['shopmgr_caps'] = array(
+			'unfiltered_html'    => user_can( $shopmgr_id, 'unfiltered_html' ),
 			'manage_woocommerce' => user_can( $shopmgr_id, 'manage_woocommerce' ),
 			'manage_options'     => user_can( $shopmgr_id, 'manage_options' ),
 		);

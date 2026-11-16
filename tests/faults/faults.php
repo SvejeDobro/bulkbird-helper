@@ -314,4 +314,32 @@ return array(
 		"'required'          => true,\n						'pattern'           => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',",
 		"'required'          => true,",
 	),
+	array(
+		'H2.80',
+		'/info ne navodi user.unfiltered_html u features',
+		'includes/class-info-controller.php',
+		"array( 'media.read', 'media.upload', 'media.upload_status', 'user.unfiltered_html' )",
+		"array( 'media.read', 'media.upload', 'media.upload_status' )",
+	),
+	array(
+		'H2.81a',
+		'unfiltered_html je uvijek true',
+		'includes/class-info-controller.php',
+		"'unfiltered_html' => (bool) current_user_can( 'unfiltered_html' ),",
+		"'unfiltered_html' => true,",
+	),
+	array(
+		'H2.81b',
+		'unfiltered_html se izvodi iz druge sposobnosti (administrator = smije)',
+		'includes/class-info-controller.php',
+		"'unfiltered_html' => (bool) current_user_can( 'unfiltered_html' ),",
+		"'unfiltered_html' => (bool) current_user_can( 'manage_options' ),",
+	),
+	array(
+		'H2.82',
+		'objekt user otkriva ID korisnika',
+		'includes/class-info-controller.php',
+		"'unfiltered_html' => (bool) current_user_can( 'unfiltered_html' ),",
+		"'unfiltered_html' => (bool) current_user_can( 'unfiltered_html' ),\n				'id'              => get_current_user_id(),",
+	),
 );

@@ -103,12 +103,13 @@ final class PluginTest extends TestCase {
 				'detected_plugins',
 				'analytics_lookup',
 				'media',
+				'user',
 			),
 			array_keys( $data )
 		);
 		self::assertSame( Bulkbird\Helper\VERSION, $data['plugin_version'] );
 		self::assertSame( 1, $data['api_version'] );
-		self::assertSame( array( 'media.read', 'media.upload', 'media.upload_status' ), $data['features'], 'H2.49, H2.71' );
+		self::assertSame( array( 'media.read', 'media.upload', 'media.upload_status', 'user.unfiltered_html' ), $data['features'], 'H2.49, H2.71, H2.80' );
 		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $data['media'] ) );
 		self::assertSame( 20971520, $data['media']['upload_max_bytes'], 'manje od najvećeg prijenosa WordPressa i 20 MB' );
 		self::assertIsString( $data['wordpress_version'] );
@@ -238,5 +239,39 @@ final class PluginTest extends TestCase {
 			),
 			array_values( array_unique( array_diff( $hooks, array( 'rest_post_dispatch', 'rest_request_before_callbacks' ) ) ) )
 		);
+	}
+
+	// --- user.unfiltered_html (0.4.0; H2.80–H2.83; kvarovi H2.80, H2.81a, H2.81b) ---------------
+
+	public function test_h2_81_unfiltered_html_is_what_wordpress_says_for_the_user_of_the_key(): void {
+		BBH_State::$logged_in = true;
+		BBH_State::$caps      = array( 'manage_woocommerce' );
+		$user                 = ( new Info_Controller() )->get_info()->get_data()['user'];
+		self::assertSame( array( 'unfiltered_html' => false ), $user, 'bez sposobnosti: false, i točno jedno polje' );
+
+		BBH_State::$caps = array( 'manage_woocommerce', 'unfiltered_html' );
+		self::assertSame( array( 'unfiltered_html' => true ), ( new Info_Controller() )->get_info()->get_data()['user'] );
+
+		// Druge sposobnosti ne utječu (npr. administrator na multisiteu ili uz DISALLOW_UNFILTERED_HTML je nema).
+		BBH_State::$caps = array( 'manage_woocommerce', 'manage_options', 'edit_posts', 'upload_files' );
+		self::assertFalse( ( new Info_Controller() )->get_info()->get_data()['user']['unfiltered_html'] );
+	}
+
+	public function test_h2_82_nothing_else_about_the_user(): void {
+		BBH_State::$logged_in     = true;
+		BBH_Media_State::$user_id = 4711;
+		BBH_State::$caps          = array( 'manage_woocommerce', 'unfiltered_html' );
+		$data                     = ( new Info_Controller() )->get_info()->get_data();
+
+		self::assertSame( array( 'unfiltered_html' ), array_keys( $data['user'] ) );
+		self::assertIsBool( $data['user']['unfiltered_html'] );
+		$json = (string) json_encode( $data );
+		self::assertStringNotContainsString( '4711', $json, 'ID korisnika' );
+		self::assertDoesNotMatchRegularExpression( '/"(id|ID|login|user_login|name|display_name|email|user_email|role|roles|capabilities|caps)"\s*:/', $json );
+		self::assertDoesNotMatchRegularExpression( '/administrator|shop_manager|manage_woocommerce|manage_options/', $json, 'uloga ili druge sposobnosti' );
+
+		$schema = ( new Info_Controller() )->get_schema()['properties']['user'];
+		self::assertSame( array( 'unfiltered_html' ), array_keys( $schema['properties'] ) );
+		self::assertSame( 'boolean', $schema['properties']['unfiltered_html']['type'] );
 	}
 }
