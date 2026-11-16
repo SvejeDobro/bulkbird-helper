@@ -31,7 +31,11 @@ Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
 - samo kroz **WP-CLI** (`tests/tools/cleanup-test-media.php`);
 - **prije brisanja ispisati broj i ID-jeve**.
 
-Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni proizvodi, ni narudžbe, ni datoteke.
+Dopuna (vlasnik, 16. 11. 2026.): isto vrijedi i za **skice proizvoda** koje stvore testovi plugina na te dvije
+trgovine: naziv počinje s `bbh-test-`, status skica, uz ispis ID-ja prije brisanja.
+
+Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni drugi proizvodi, ni narudžbe, ni datoteke.
+**Proizvodi `bbf-` (teststore1, ID 16942–16945) se nikad ne brišu**; `bbt-` su Bulkbirdovi i nisu moji.
 
 ## CI (GitHub Actions)
 
@@ -56,6 +60,11 @@ uz odobrenje vlasnika.
 - `0.3.0` (`GET /media/uploads/<client_upload_id>`, provjera ishoda prijenosa čitanjem; ugovor poglavlje 9) je
   izdan (oznaka `v0.3.0`) i aktivan na obje stranice. `PATCH /media/<id>` i skupna provjera ostaju samo u
   `docs/proposals/`.
+
+- Grana `paket-0.4.0` (`user.unfiltered_html` u `/info`) **se ne izdaje** (odluka vlasnika 16. 11. 2026.):
+  WooCommerce REST čisti opis svakom korisniku, pa polje ne bi ništa predvidjelo. Grana ostaje kakva jest;
+  razlog i mogući budući smjer (faza 5) su u `docs/proposals/0.4.0-unfiltered-html.md`.
+- teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.
 
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 
