@@ -63,9 +63,11 @@ uz odobrenje vlasnika.
   izdan (oznaka `v0.3.0`) i aktivan na obje stranice. `PATCH /media/<id>` i skupna provjera ostaju samo u
   `docs/proposals/`.
 
-- Grana `paket-0.4.0` (`user.unfiltered_html` u `/info`) **se ne izdaje** (odluka vlasnika 16. 11. 2026.):
-  WooCommerce REST čisti opis svakom korisniku, pa polje ne bi ništa predvidjelo. Grana ostaje kakva jest;
-  razlog i mogući budući smjer (faza 5) su u `docs/proposals/0.4.0-unfiltered-html.md`.
+- Grana `arhiva/0.4.0-unfiltered-html` (prije `paket-0.4.0`; `user.unfiltered_html` u `/info`) **je napuštena**
+  (odluka vlasnika 16. 11. 2026.); razlog je u `docs/proposals/0.4.0-unfiltered-html.md`. Ne briše se.
+- Grana `paket-0.4.0-redoslijed`: `GET /terms/order` (zapis redoslijeda pojmova; nacrt u ugovoru, poglavlje 10).
+  **Ne tagira se, ne spaja u main i ne postavlja na stranice dok vlasnik ne odobri.** Na stranicama je `0.3.0`
+  (testovi stvarnim HTTP-om s te grane: `BBH_EXPECT_VERSION=0.3.0`).
 - teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.
 
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.

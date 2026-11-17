@@ -39,6 +39,7 @@ final class BBH_State {
 		self::$added_options   = array();
 		self::$deleted_options = array();
 		self::$routes          = array();
+		BBH_Terms_State::reset();
 		BBH_Media_State::$user_id         = 0;
 		BBH_Media_State::$rate_limits     = null;
 		BBH_Media_State::$updated_options = array();
@@ -369,6 +370,42 @@ function wp_update_attachment_metadata( int $attachment_id, array $data ): bool 
 	return true;
 }
 
+final class BBH_Terms_State {
+	/** @var string[] */
+	public static array $taxonomies = array( 'product_cat' );
+	/** @var array<string, array<int, int>> Taxonomy => ( term id => parent ), in the shop's listing order. */
+	public static array $terms = array();
+	/** @var array<int, array<string, mixed>> Term id => meta. */
+	public static array $meta = array();
+	/** @var array<int, array<string, mixed>> Arguments of every get_terms() call. */
+	public static array $calls = array();
+	/** @var array<int, int[]> */
+	public static array $primed = array();
+	public static function reset(): void {
+		self::$taxonomies = array( 'product_cat' );
+		self::$terms      = array();
+		self::$meta       = array();
+		self::$calls      = array();
+		self::$primed     = array();
+	}
+}
+function taxonomy_exists( string $taxonomy ): bool {
+	return in_array( $taxonomy, BBH_Terms_State::$taxonomies, true );
+}
+function get_terms( array $args ) {
+	BBH_Terms_State::$calls[] = $args;
+	return BBH_Terms_State::$terms[ $args['taxonomy'] ] ?? array();
+}
+function update_termmeta_cache( array $ids ): void {
+	BBH_Terms_State::$primed[] = $ids;
+}
+function metadata_exists( string $type, int $id, string $key ): bool {
+	return 'term' === $type && array_key_exists( $key, BBH_Terms_State::$meta[ $id ] ?? array() );
+}
+function get_term_meta( int $id, string $key = '', bool $single = false ) {
+	return BBH_Terms_State::$meta[ $id ][ $key ] ?? '';
+}
+
 $bbh_root = dirname( __DIR__, 2 );
 require_once $bbh_root . '/bulkbird-helper.php';
 require_once $bbh_root . '/includes/class-permissions.php';
@@ -376,6 +413,7 @@ require_once $bbh_root . '/includes/class-rate-limiter.php';
 require_once $bbh_root . '/includes/class-media-rules.php';
 require_once $bbh_root . '/includes/class-media-library.php';
 require_once $bbh_root . '/includes/class-media-controller.php';
+require_once $bbh_root . '/includes/class-terms-controller.php';
 require_once $bbh_root . '/includes/class-environment.php';
 require_once $bbh_root . '/includes/class-info-controller.php';
 require_once $bbh_root . '/includes/class-activation.php';

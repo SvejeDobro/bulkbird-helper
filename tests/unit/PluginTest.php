@@ -49,7 +49,7 @@ final class PluginTest extends TestCase {
 
 	public function test_h0_75_info_route_has_a_real_permission_callback(): void {
 		Bulkbird\Helper\register_rest_routes();
-		self::assertSame( array( '/info', '/media', '/media/uploads/(?P<client_upload_id>[^/]+)' ), array_column( BBH_State::$routes, 1 ) );
+		self::assertSame( array( '/info', '/media', '/media/uploads/(?P<client_upload_id>[^/]+)', '/terms/order' ), array_column( BBH_State::$routes, 1 ) );
 		list( $namespace, $route, $args ) = BBH_State::$routes[0];
 		self::assertSame( 'bulkbird/v1', $namespace );
 		self::assertSame( '/info', $route );
@@ -108,7 +108,7 @@ final class PluginTest extends TestCase {
 		);
 		self::assertSame( Bulkbird\Helper\VERSION, $data['plugin_version'] );
 		self::assertSame( 1, $data['api_version'] );
-		self::assertSame( array( 'media.read', 'media.upload', 'media.upload_status' ), $data['features'], 'H2.49, H2.71' );
+		self::assertSame( array( 'media.read', 'media.upload', 'media.upload_status', 'terms.order' ), $data['features'], 'H2.49, H2.71, H2.90' );
 		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $data['media'] ) );
 		self::assertSame( 20971520, $data['media']['upload_max_bytes'], 'manje od najvećeg prijenosa WordPressa i 20 MB' );
 		self::assertIsString( $data['wordpress_version'] );
@@ -208,7 +208,7 @@ final class PluginTest extends TestCase {
 
 	public function test_routes_are_registered_on_a_supported_single_site(): void {
 		Bulkbird\Helper\register_rest_routes();
-		self::assertCount( 3, BBH_State::$routes );
+		self::assertCount( 4, BBH_State::$routes );
 	}
 
 	// --- Deinstalacija (H0.45; kvar H0.89) ------------------------------------------------------

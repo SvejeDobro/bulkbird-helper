@@ -269,6 +269,24 @@ H2.75 (stavka i za sliku u smeću), H2.76a (dovoljna jedna sposobnost), H2.76b (
 Poznata praznina: stanje `in_progress` stvarnim HTTP-om nije izvedivo pouzdano
 (traži zahtjev koji traje); pokriva ga integracijski test koji sam drži zaključavanje.
 
+## Redoslijed pojmova — `GET /terms/order` (`0.4.0`, zadatak vlasnika 17. 11. 2026.)
+
+| ID | Scenarij | Očekivano |
+|---|---|---|
+| H2.90 | `/info` na 0.4.0 | `features` sadrži `terms.order`; `api_version` ostaje 1; putanja ne postoji bez WooCommercea i na multisiteu |
+| H2.91 | Kategorije: podkategorije bez zapisa, s negativnim brojem, s 0, s istim brojem, nazivi s č/ć/c, đ, znamenkama | redoslijed stavki jednak zadanom `get_terms()` trgovine; plugin ne zadaje vlastiti poredak |
+| H2.92 | Zapis redoslijeda | bez zapisa `null`; zapis 0 je `0`; negativan ostaje negativan; zapis koji nije broj je `0`; WooCommerce REST za pojam bez zapisa i dalje vraća 0 |
+| H2.93 | Stranice | `per_page` 1–1000 (zadano 100), `page`; `X-WP-Total`, `X-WP-TotalPages`; stranice zajedno daju cijeli popis istim redom; iza zadnje prazan popis |
+| H2.94 | Taksonomije | samo `product_cat` i `product_brand`; druga ili nepostojeća: 400 `rest_invalid_param`; brendovi bez brendova: 404 `bulkbird_taxonomy_not_found`; brendovi kad postoje: redoslijed kao zadani `get_terms()` (po nazivu) |
+| H2.95 | Dozvole | bez prijave 401, bez `manage_woocommerce` 403 (i kad je parametar neispravan); ključ samo za čitanje smije; druge metode ne postoje |
+| H2.96 | Ograničenje učestalosti | broji se kao zahtjev (120/min), ne kao prijenos |
+| H2.97 | Sadržaj stavke | točno `id`, `parent`, `order`; bez naziva, opisa, sluga i broja proizvoda |
+| H2.98 | Ništa se ne mijenja | jedini upis u bazu je brojač učestalosti; pojam bez zapisa i dalje nema zapis; broj upita ne ovisi o broju pojmova |
+| H2.99 | Stvarnim HTTP-om (kad 0.4.0 bude na stranicama) | odgovor jednak probi `get_terms()` na obje trgovine; brendovi 200 na WC 11.3, 404 na WC 8.0.3 |
+
+Namjerni kvarovi: H2.90, H2.91 (vlastiti poredak), H2.92a (bez zapisa kao 0), H2.92b (0 kao bez zapisa), H2.93,
+H2.94a, H2.94b (bilo koja taksonomija), H2.95 (bez provjere sposobnosti), H2.97 (naziv u odgovoru).
+
 ## Poznate praznine (stanje 15. 11. 2026.)
 
 | Scenarij | Što nije izvedeno | Razlog | Što ga ipak pokriva |

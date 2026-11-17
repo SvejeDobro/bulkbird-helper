@@ -1,10 +1,11 @@
 {
-    "plugin_version": "0.3.0",
+    "plugin_version": "0.4.0",
     "api_version": 1,
     "features": [
         "media.read",
         "media.upload",
-        "media.upload_status"
+        "media.upload_status",
+        "terms.order"
     ],
     "wordpress_version": "7.1.4",
     "woocommerce_version": "11.3.0",

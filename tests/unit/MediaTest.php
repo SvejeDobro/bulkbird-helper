@@ -594,7 +594,7 @@ final class MediaTest extends TestCase {
 		self::assertCount( 1, $handlers, 'samo GET' );
 		self::assertSame( 'GET', $handlers[0]['methods'] );
 		self::assertSame( 'Bulkbird\Helper\rest_can_read_media', $handlers[0]['permission_callback'] );
-		self::assertCount( 3, BBH_State::$routes, 'nema drugih novih putanja (npr. PATCH /media/<id>)' );
+		self::assertSame( array(), preg_grep( '#^/media/\(\?P<id>#', array_column( BBH_State::$routes, 1 ) ), 'nema putanje PATCH /media/<id>' );
 
 		$arg = $handlers[0]['args']['client_upload_id'];
 		self::assertTrue( $arg['required'] );

@@ -1,0 +1,10 @@
+{
+    "status": 404,
+    "body": {
+        "code": "bulkbird_taxonomy_not_found",
+        "message": "This shop does not have this taxonomy.",
+        "data": {
+            "status": 404
+        }
+    }
+}
