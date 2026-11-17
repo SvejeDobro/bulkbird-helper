@@ -1,0 +1,11 @@
+{
+    "request": "GET /bulkbird/v1/terms/order?taxonomy=product_brand&per_page=10",
+    "status": 404,
+    "body": {
+        "code": "bulkbird_taxonomy_not_found",
+        "message": "This shop does not have this taxonomy.",
+        "data": {
+            "status": 404
+        }
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "request": "GET /bulkbird/v1/terms/order?taxonomy=product_brand&per_page=10",
+    "status": 200,
+    "headers": {
+        "X-WP-Total": "1",
+        "X-WP-TotalPages": "1"
+    },
+    "body": [
+        {
+            "id": 149,
+            "parent": 0,
+            "order": null
+        }
+    ]
+}

@@ -354,8 +354,15 @@ cjelovitog poretka.
 | bez prijave / bez prava | 401 / 403 | kao u poglavlju 3 (imaju prednost pred 400) |
 | previše zahtjeva | 429 | `bulkbird_rate_limited` |
 
-Primjeri odgovora: `fixtures/v1/terms-order.json` i `fixtures/v1/terms-order-taxonomy-not-found.json`
-(sastavljeni ručno; oblik potvrđuje integracijski test).
+Primjeri odgovora u `fixtures/v1/`:
+
+- snimljeni stvarnim HTTP-om s verzije `0.4.0` (17. 11. 2026., ključ samo za čitanje; polje `request` kaže koji je
+  zahtjev poslan): `terms-order-product-cat.new.json` i `terms-order-product-cat.old.json` (prvih 10 pojmova),
+  `terms-order-product-brand.new.json`, `terms-order-product-brand.old.json` (404 na WooCommerceu bez brendova),
+  `terms-order-invalid-taxonomy.new.json` i `terms-order-missing-taxonomy.new.json` (400);
+- sastavljeni ručno: `terms-order.json` (svi slučajevi vrijednosti `order` na jednom mjestu: bez zapisa, negativan,
+  `0`, isti broj) i `terms-order-taxonomy-not-found.json`. Oblik im je jednak snimljenima (404 je jednak znak po
+  znak) i potvrđuje ga integracijski test.
 
 ## 11. Odobrene razlike prema prvoj inačici specifikacije
 

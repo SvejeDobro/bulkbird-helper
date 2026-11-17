@@ -1,0 +1,60 @@
+{
+    "request": "GET /bulkbird/v1/terms/order?taxonomy=product_cat&per_page=10",
+    "status": 200,
+    "headers": {
+        "X-WP-Total": "133",
+        "X-WP-TotalPages": "14"
+    },
+    "body": [
+        {
+            "id": 143,
+            "parent": 135,
+            "order": null
+        },
+        {
+            "id": 144,
+            "parent": 135,
+            "order": null
+        },
+        {
+            "id": 27,
+            "parent": 17,
+            "order": null
+        },
+        {
+            "id": 94,
+            "parent": 56,
+            "order": null
+        },
+        {
+            "id": 63,
+            "parent": 57,
+            "order": null
+        },
+        {
+            "id": 58,
+            "parent": 57,
+            "order": null
+        },
+        {
+            "id": 16,
+            "parent": 0,
+            "order": null
+        },
+        {
+            "id": 20,
+            "parent": 19,
+            "order": null
+        },
+        {
+            "id": 25,
+            "parent": 24,
+            "order": null
+        },
+        {
+            "id": 31,
+            "parent": 30,
+            "order": null
+        }
+    ]
+}
