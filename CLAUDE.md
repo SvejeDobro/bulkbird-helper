@@ -33,6 +33,8 @@ Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
 
 Dopuna (vlasnik, 16. 11. 2026.): isto vrijedi i za **skice proizvoda** koje stvore testovi plugina na te dvije
 trgovine: naziv počinje s `bbh-test-`, status skica, uz ispis ID-ja prije brisanja.
+Dopuna (vlasnik, 17. 11. 2026.): i za **pojmove** (`product_cat`, `product_tag`, `product_brand`) koje stvore
+testovi plugina: naziv počinje s `bbh-test-`, uz ispis ID-ja; skripta `tests/tools/cleanup-test-terms.php`.
 
 Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni drugi proizvodi, ni narudžbe, ni datoteke.
 **Proizvodi `bbf-` (teststore1, ID 16942–16945) se nikad ne brišu**; `bbt-` su Bulkbirdovi i nisu moji.
