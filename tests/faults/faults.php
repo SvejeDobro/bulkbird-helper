@@ -16,8 +16,8 @@ return array(
 		'H0.81',
 		'permission_callback na /info uvijek dopušta',
 		'bulkbird-helper.php',
-		"return rest_guard( array( 'manage_woocommerce' ), \$request );",
-		'return true;',
+		"function rest_can_get_info( \$request = null ) {\n	return rest_guard( array( 'manage_woocommerce' ), \$request );",
+		"function rest_can_get_info( \$request = null ) {\n	return true;",
 	),
 	array(
 		'H0.82',
