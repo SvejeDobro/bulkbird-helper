@@ -6,13 +6,12 @@ WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
 **Poglavlja 6–8 (`/media`, ograničenje učestalosti) — konačno, verzija `0.2.0`** (odluke vlasnika 15. 11. 2026.); potvrđena
 stvarnim HTTP zahtjevima na obje testne stranice.
 **Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
-**Poglavlje 10 (`GET /terms/order`) je NACRT za `0.4.0`**: izvedeno na grani `paket-0.4.0-redoslijed`, nije izdano ni
-postavljeno na trgovine dok vlasnik ne odobri.
+**Poglavlje 10 (`GET /terms/order`) — konačno, verzija `0.4.0`** (odobrio vlasnik 17. 11. 2026.).
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.3.0` (faza 0: `/info`; faze 1 i 2: `/media`; `0.3.0`: stanje prijenosa)
+- Verzija plugina: `0.4.0` (faza 0: `/info`; faze 1 i 2: `/media`; `0.3.0`: stanje prijenosa; `0.4.0`: redoslijed pojmova)
 - **Ugovor je isti od `0.2.0`.** `0.2.1` mijenja samo redoslijed provjere: zahtjev bez prijave ili korisnika
   bez prava dobiva 401 odnosno 403 i kad mu je neki parametar neispravan (u `0.2.0` je tada dobivao 400).
   Kodovi i statusi se ne mijenjaju; tko smije, za neispravan parametar i dalje dobiva 400.
@@ -79,7 +78,7 @@ Ne upisuje ništa u bazu.
 |---|---|---|
 | `plugin_version` | tekst | verzija plugina (SemVer), npr. `0.1.0` |
 | `api_version` | cijeli broj | `1`; mijenja se samo pri nekompatibilnoj promjeni |
-| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. `0.4.0` (nacrt): i `terms.order`. Slijede: `changes` (faza 3), `sales` (faza 4) |
+| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. `0.4.0`: i `terms.order`. Slijede: `changes` (faza 3), `sales` (faza 4) |
 | `wordpress_version` | tekst | npr. `7.1.4` |
 | `woocommerce_version` | tekst | npr. `11.3.0` |
 | `php_version` | tekst | `glavna.sporedna.izdanje`, bez dodataka distribucije, npr. `8.3.36` |
@@ -310,7 +309,7 @@ njegov oblik potvrđuje integracijski test.
 Nije dio `0.3.0` (odluke vlasnika 15. 11. 2026.): skupna provjera više ID-jeva odjednom i izmjena naslova ili
 alternativnog teksta (`PATCH /media/<id>`); opisane su samo u `docs/proposals/0.3.0-client-upload-id.md`.
 
-## 10. `GET /bulkbird/v1/terms/order` (NACRT za `0.4.0`; `features` sadrži `terms.order`)
+## 10. `GET /bulkbird/v1/terms/order` (`0.4.0`; `features` sadrži `terms.order`)
 
 Zapis redoslijeda pojmova, onako kako ga trgovina ima. Namjena: WooCommerce REST u polju `menu_order` vraća
 `0` i za pojam koji **nema** zapis redoslijeda i za pojam sa zapisom `0`, a ta se dva redaju različito i pojam

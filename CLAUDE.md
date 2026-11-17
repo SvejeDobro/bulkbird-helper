@@ -53,7 +53,7 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni drugi 
 
 ## Stanje
 
-Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`) su na grani `main` (oznake `v0.1.0`, `v0.2.0`); `0.3.0` je aktivan na
+Faza 0 (`0.1.0`) i faze 1 i 2 (`0.2.0`) su na grani `main` (oznake `v0.1.0`, `v0.2.0`); `0.4.0` je aktivan na
 obje testne stranice. **Plugin miruje** (odluka vlasnika 15. 11. 2026.): faze 3 i 4 se ne počinju dok vlasnik
 ne odluči. Bulkbird program koristi `0.2.0` prema konačnom ugovoru `docs/api-v1.md`; ugovor se mijenja samo
 uz odobrenje vlasnika.
@@ -65,9 +65,8 @@ uz odobrenje vlasnika.
 
 - Grana `arhiva/0.4.0-unfiltered-html` (prije `paket-0.4.0`; `user.unfiltered_html` u `/info`) **je napuštena**
   (odluka vlasnika 16. 11. 2026.); razlog je u `docs/proposals/0.4.0-unfiltered-html.md`. Ne briše se.
-- Grana `paket-0.4.0-redoslijed`: `GET /terms/order` (zapis redoslijeda pojmova; nacrt u ugovoru, poglavlje 10).
-  **Ne tagira se, ne spaja u main i ne postavlja na stranice dok vlasnik ne odobri.** Na stranicama je `0.3.0`
-  (testovi stvarnim HTTP-om s te grane: `BBH_EXPECT_VERSION=0.3.0`).
+- `0.4.0` (`GET /terms/order`, zapis redoslijeda pojmova; ugovor poglavlje 10) je izdan (oznaka `v0.4.0`,
+  odobrio vlasnik 17. 11. 2026.) i aktivan na obje stranice. Nakon toga plugin miruje.
 - teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.
 
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
