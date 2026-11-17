@@ -6,11 +6,12 @@ WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
 **Poglavlja 6–8 (`/media`, ograničenje učestalosti) — konačno, verzija `0.2.0`** (odluke vlasnika 15. 11. 2026.); potvrđena
 stvarnim HTTP zahtjevima na obje testne stranice.
 **Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
+**Poglavlje 10 (`GET /terms/order`) — konačno, verzija `0.4.0`** (odobrio vlasnik 17. 11. 2026.).
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
 - `api_version`: `1`
-- Verzija plugina: `0.3.0` (faza 0: `/info`; faze 1 i 2: `/media`; `0.3.0`: stanje prijenosa)
+- Verzija plugina: `0.4.0` (faza 0: `/info`; faze 1 i 2: `/media`; `0.3.0`: stanje prijenosa; `0.4.0`: redoslijed pojmova)
 - **Ugovor je isti od `0.2.0`.** `0.2.1` mijenja samo redoslijed provjere: zahtjev bez prijave ili korisnika
   bez prava dobiva 401 odnosno 403 i kad mu je neki parametar neispravan (u `0.2.0` je tada dobivao 400).
   Kodovi i statusi se ne mijenjaju; tko smije, za neispravan parametar i dalje dobiva 400.
@@ -77,7 +78,7 @@ Ne upisuje ništa u bazu.
 |---|---|---|
 | `plugin_version` | tekst | verzija plugina (SemVer), npr. `0.1.0` |
 | `api_version` | cijeli broj | `1`; mijenja se samo pri nekompatibilnoj promjeni |
-| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. Slijede: `changes` (faza 3), `sales` (faza 4) |
+| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. `0.4.0`: i `terms.order`. Slijede: `changes` (faza 3), `sales` (faza 4) |
 | `wordpress_version` | tekst | npr. `7.1.4` |
 | `woocommerce_version` | tekst | npr. `11.3.0` |
 | `php_version` | tekst | `glavna.sporedna.izdanje`, bez dodataka distribucije, npr. `8.3.36` |
@@ -308,7 +309,55 @@ njegov oblik potvrđuje integracijski test.
 Nije dio `0.3.0` (odluke vlasnika 15. 11. 2026.): skupna provjera više ID-jeva odjednom i izmjena naslova ili
 alternativnog teksta (`PATCH /media/<id>`); opisane su samo u `docs/proposals/0.3.0-client-upload-id.md`.
 
-## 10. Odobrene razlike prema prvoj inačici specifikacije
+## 10. `GET /bulkbird/v1/terms/order` (`0.4.0`; `features` sadrži `terms.order`)
+
+Zapis redoslijeda pojmova, onako kako ga trgovina ima. Namjena: WooCommerce REST u polju `menu_order` vraća
+`0` i za pojam koji **nema** zapis redoslijeda i za pojam sa zapisom `0`, a ta se dva redaju različito i pojam
+bez zapisa se ne prikazuje u widgetu kategorija (`docs/measurements/term-order.md`). Ova putanja ih razlikuje.
+
+- Sposobnost: `manage_woocommerce` (kao `/info`). Radi i s ključem **samo za čitanje**.
+- Ne mijenja ništa u trgovini.
+- Ograničenje učestalosti: broji se u 120 zahtjeva u minuti.
+
+| Parametar | Vrsta | Zadano | Značenje |
+|---|---|---|---|
+| `taxonomy` | `product_cat` ili `product_brand` | — (obavezan) | taksonomija |
+| `page` | cijeli broj ≥ 1 | 1 | stranica. Stranica iza zadnje vraća 200 i prazan popis |
+| `per_page` | cijeli broj 1–1000 | 100 | stavki po stranici |
+
+Odgovor 200 je popis **svih** pojmova te taksonomije (i praznih, i svih razina). **Stavka ima točno tri polja:**
+
+| Polje | Vrsta | Značenje |
+|---|---|---|
+| `id` | cijeli broj | ID pojma (isti kao u `wc/v3/products/categories` odnosno `brands`) |
+| `parent` | cijeli broj | ID roditelja; `0` za pojam na vrhu |
+| `order` | cijeli broj ili `null` | zapis redoslijeda (meta polje pojma `order`). **`null` znači da zapisa nema.** Zapis koji nije broj vraća se kao `0`, jer ga tako reda i trgovina |
+
+Naziv, opis, slug i broj proizvoda se ne vraćaju; za njih postoji WooCommerce REST.
+
+**Redoslijed stavki u odgovoru** je onaj kojim trgovina sama vraća pojmove te taksonomije (zadani
+`get_terms`), preko svih razina zajedno:
+
+- `product_cat`: poredak trgovine — pojmovi bez zapisa prvi, zatim brojčano uzlazno po `order`, pri istom
+  broju po nazivu (kolacijom baze). Redoslijed unutar jedne razine klijent dobiva tako da iz odgovora izdvoji
+  stavke s istim `parent`, ne mijenjajući im međusobni poredak;
+- `product_brand`: po nazivu (WooCommerce brendove sam ne reda po `order`).
+
+Zaglavlja odgovora: `X-WP-Total` (ukupan broj pojmova), `X-WP-TotalPages`. Stranice se režu iz jednog,
+cjelovitog poretka.
+
+| Slučaj | HTTP | `code` |
+|---|---|---|
+| `taxonomy` nije `product_cat` ni `product_brand`, ili nedostaje | 400 | `rest_invalid_param` (odnosno `rest_missing_callback_param` kad nedostaje) |
+| `product_brand` na trgovini čiji WooCommerce nema brendove | 404 | `bulkbird_taxonomy_not_found` |
+| neispravan `page` ili `per_page` (npr. `per_page=1001`) | 400 | `rest_invalid_param` |
+| bez prijave / bez prava | 401 / 403 | kao u poglavlju 3 (imaju prednost pred 400) |
+| previše zahtjeva | 429 | `bulkbird_rate_limited` |
+
+Primjeri odgovora: `fixtures/v1/terms-order.json` i `fixtures/v1/terms-order-taxonomy-not-found.json`
+(sastavljeni ručno; oblik potvrđuje integracijski test).
+
+## 11. Odobrene razlike prema prvoj inačici specifikacije
 
 Odobrio vlasnik projekta 15. 11. 2026.; `docs/spec-v1.md` je usklađen.
 

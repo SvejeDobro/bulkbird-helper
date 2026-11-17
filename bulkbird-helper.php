@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.3.0
+ * Version:              0.4.0
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.3.0';
+const VERSION           = '0.4.0';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -260,6 +260,41 @@ function register_rest_routes(): void {
 		)
 	);
 
+	register_rest_route(
+		REST_NAMESPACE,
+		'/terms/order',
+		array(
+			array(
+				'methods'             => 'GET',
+				'callback'            => __NAMESPACE__ . '\\rest_get_terms_order',
+				'permission_callback' => __NAMESPACE__ . '\\rest_can_read_terms',
+				'args'                => array(
+					'taxonomy' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'enum'              => array( 'product_cat', 'product_brand' ),
+						'validate_callback' => 'rest_validate_request_arg',
+					),
+					'page'     => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
+						'validate_callback' => 'rest_validate_request_arg',
+						'sanitize_callback' => 'rest_sanitize_request_arg',
+					),
+					'per_page' => array(
+						'type'              => 'integer',
+						'default'           => 100,
+						'minimum'           => 1,
+						'maximum'           => 1000,
+						'validate_callback' => 'rest_validate_request_arg',
+						'sanitize_callback' => 'rest_sanitize_request_arg',
+					),
+				),
+			),
+		)
+	);
+
 	add_filter( 'rest_post_dispatch', __NAMESPACE__ . '\\finish_own_responses', 10, 3 );
 	add_filter( 'rest_request_before_callbacks', __NAMESPACE__ . '\\auth_errors_first', 10, 3 );
 }
@@ -430,6 +465,29 @@ function rest_get_upload_status( \WP_REST_Request $request ) {
 	load_media_classes();
 
 	return ( new Media_Controller() )->upload_status( $request );
+}
+
+/**
+ * GET /terms/order
+ *
+ * @param \WP_REST_Request $request Request.
+ * @return \WP_REST_Response|\WP_Error
+ */
+function rest_get_terms_order( \WP_REST_Request $request ) {
+	load_rest_classes();
+	require_once __DIR__ . '/includes/class-terms-controller.php';
+
+	return ( new Terms_Controller() )->order( $request );
+}
+
+/**
+ * Who may read the term order: the same capability as /info.
+ *
+ * @param mixed $request Request.
+ * @return true|\WP_Error
+ */
+function rest_can_read_terms( $request = null ) {
+	return rest_guard( array( 'manage_woocommerce' ), $request );
 }
 
 /**
