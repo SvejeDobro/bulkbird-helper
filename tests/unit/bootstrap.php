@@ -373,6 +373,8 @@ function wp_update_attachment_metadata( int $attachment_id, array $data ): bool 
 final class BBH_Terms_State {
 	/** @var string[] */
 	public static array $taxonomies = array( 'product_cat' );
+	/** @var string[] Taxonomies of the shop's global attributes, as WooCommerce lists them. */
+	public static array $attributes = array();
 	/** @var array<string, array<int, int>> Taxonomy => ( term id => parent ), in the shop's listing order. */
 	public static array $terms = array();
 	/** @var array<int, array<string, mixed>> Term id => meta. */
@@ -383,11 +385,16 @@ final class BBH_Terms_State {
 	public static array $primed = array();
 	public static function reset(): void {
 		self::$taxonomies = array( 'product_cat' );
+		self::$attributes = array();
 		self::$terms      = array();
 		self::$meta       = array();
 		self::$calls      = array();
 		self::$primed     = array();
 	}
+}
+/** @return string[] */
+function wc_get_attribute_taxonomy_names(): array {
+	return BBH_Terms_State::$attributes;
 }
 function taxonomy_exists( string $taxonomy ): bool {
 	return in_array( $taxonomy, BBH_Terms_State::$taxonomies, true );

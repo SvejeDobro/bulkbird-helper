@@ -4,6 +4,8 @@
  *
  *   BBH_TAXONOMY=product_cat wp eval-file tests/probe/terms.php
  *
+ * Od 0.5.0 i taksonomija globalnog atributa (pa_…), samo ako je WooCommerce navodi među atributima.
+ *
  * Ispis: JSON s ID-jevima (bez naziva).
  *
  * @package Bulkbird\Helper\Tests
@@ -15,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 
 ( static function (): void {
 	$taxonomy = (string) getenv( 'BBH_TAXONOMY' );
-	if ( ! in_array( $taxonomy, array( 'product_cat', 'product_brand' ), true ) ) {
+	if ( ! in_array( $taxonomy, array_merge( array( 'product_cat', 'product_brand' ), wc_get_attribute_taxonomy_names() ), true ) ) {
 		exit( 1 );
 	}
 	if ( ! taxonomy_exists( $taxonomy ) ) {

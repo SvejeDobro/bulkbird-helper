@@ -2,8 +2,8 @@
 /**
  * GET /bulkbird/v1/terms/order
  *
- * Tells, for every term of a taxonomy, whether WooCommerce has a stored order for it and
- * which one. WooCommerce REST reports 0 both for "no record" and for a stored 0, although
+ * Tells, for every term of a taxonomy (product categories, brands and, from 0.5.0, the values of
+ * a global product attribute), whether WooCommerce has a stored order for it and which one. WooCommerce REST reports 0 both for "no record" and for a stored 0, although
  * the two are sorted differently and a term without a record is left out of the category
  * widget. Reads only; changes nothing in the shop.
  *
@@ -24,7 +24,8 @@ defined( 'ABSPATH' ) || exit;
 final class Terms_Controller {
 
 	/**
-	 * Taxonomies this endpoint may be asked about.
+	 * Taxonomies this endpoint may always be asked about. The taxonomies of the shop's global
+	 * product attributes are allowed too, see is_supported().
 	 */
 	public const TAXONOMIES = array( 'product_cat', 'product_brand' );
 
@@ -39,7 +40,7 @@ final class Terms_Controller {
 	 */
 	public function order( \WP_REST_Request $request ) {
 		$taxonomy = (string) $request->get_param( 'taxonomy' );
-		if ( ! in_array( $taxonomy, self::TAXONOMIES, true ) ) {
+		if ( ! self::is_supported( $taxonomy ) ) {
 			return new \WP_Error( 'rest_invalid_param', __( 'Invalid parameter(s): taxonomy', 'bulkbird-helper' ), array( 'status' => 400 ) );
 		}
 		if ( ! taxonomy_exists( $taxonomy ) ) {
@@ -52,7 +53,7 @@ final class Terms_Controller {
 
 		// The default listing of the taxonomy, empty terms included, with no ordering argument of our
 		// own: for product categories WooCommerce turns that into the shop's order, for brands it is
-		// by name. All ids are read at once and paged here, so that every page is cut from one order.
+		// by name, for a global attribute it follows the attribute's own "default sort order" setting. All ids are read at once and paged here, so that every page is cut from one order.
 		$parents = get_terms(
 			array(
 				'taxonomy'   => $taxonomy,
@@ -83,6 +84,22 @@ final class Terms_Controller {
 		$response->header( 'X-WP-TotalPages', (string) (int) ceil( $total / $per_page ) );
 
 		return $response;
+	}
+
+	/**
+	 * Whether the endpoint answers for this taxonomy: product categories, brands, and the taxonomies
+	 * of global product attributes exactly as WooCommerce lists them. Any other taxonomy, a "pa_"
+	 * one that is not a WooCommerce attribute included, is refused.
+	 *
+	 * @param string $taxonomy Taxonomy name.
+	 * @return bool
+	 */
+	public static function is_supported( string $taxonomy ): bool {
+		if ( in_array( $taxonomy, self::TAXONOMIES, true ) ) {
+			return true;
+		}
+
+		return '' !== $taxonomy && function_exists( 'wc_get_attribute_taxonomy_names' ) && in_array( $taxonomy, wc_get_attribute_taxonomy_names(), true );
 	}
 
 	/**

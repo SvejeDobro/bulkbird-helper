@@ -108,7 +108,7 @@ final class PluginTest extends TestCase {
 		);
 		self::assertSame( Bulkbird\Helper\VERSION, $data['plugin_version'] );
 		self::assertSame( 1, $data['api_version'] );
-		self::assertSame( array( 'media.read', 'media.upload', 'media.upload_status', 'terms.order' ), $data['features'], 'H2.49, H2.71, H2.90' );
+		self::assertSame( array( 'media.read', 'media.upload', 'media.upload_status', 'terms.order', 'terms.order.attributes' ), $data['features'], 'H2.49, H2.71, H2.90, H2.100' );
 		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $data['media'] ) );
 		self::assertSame( 20971520, $data['media']['upload_max_bytes'], 'manje od najvećeg prijenosa WordPressa i 20 MB' );
 		self::assertIsString( $data['wordpress_version'] );

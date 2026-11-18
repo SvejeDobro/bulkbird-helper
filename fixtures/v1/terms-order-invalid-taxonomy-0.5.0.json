@@ -1,0 +1,21 @@
+{
+    "request": "GET /bulkbird/v1/terms/order?taxonomy=category",
+    "status": 400,
+    "body": {
+        "code": "rest_invalid_param",
+        "message": "Invalid parameter(s): taxonomy",
+        "data": {
+            "status": 400,
+            "params": {
+                "taxonomy": "taxonomy is not product_cat, product_brand or the taxonomy of a global product attribute."
+            },
+            "details": {
+                "taxonomy": {
+                    "code": "rest_not_in_enum",
+                    "message": "taxonomy is not product_cat, product_brand or the taxonomy of a global product attribute.",
+                    "data": null
+                }
+            }
+        }
+    }
+}

@@ -2,7 +2,7 @@
 /**
  * Plugin Name:          Bulkbird Helper
  * Description:          Optional companion for the Bulkbird desktop app. Adds a few REST endpoints that the WooCommerce REST API does not offer. No settings page, no front-end code.
- * Version:              0.4.0
+ * Version:              0.5.0
  * Requires at least:    6.4
  * Requires PHP:         8.1
  * Author:               Bulkbird
@@ -25,7 +25,7 @@ namespace Bulkbird\Helper;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION           = '0.4.0';
+const VERSION           = '0.5.0';
 const API_VERSION       = 1;
 const REST_NAMESPACE    = 'bulkbird/v1';
 const ROUTE_PREFIX      = 'bulkbird';
@@ -272,8 +272,7 @@ function register_rest_routes(): void {
 					'taxonomy' => array(
 						'type'              => 'string',
 						'required'          => true,
-						'enum'              => array( 'product_cat', 'product_brand' ),
-						'validate_callback' => 'rest_validate_request_arg',
+						'validate_callback' => __NAMESPACE__ . '\\rest_validate_terms_taxonomy',
 					),
 					'page'     => array(
 						'type'              => 'integer',
@@ -478,6 +477,24 @@ function rest_get_terms_order( \WP_REST_Request $request ) {
 	require_once __DIR__ . '/includes/class-terms-controller.php';
 
 	return ( new Terms_Controller() )->order( $request );
+}
+
+/**
+ * Validates the taxonomy parameter of GET /terms/order: product categories, brands or the taxonomy
+ * of one of the shop's global product attributes. The allowed names are not listed in the route
+ * description, because the attribute names of a shop are not public.
+ *
+ * @param mixed $value Parameter value.
+ * @return true|\WP_Error
+ */
+function rest_validate_terms_taxonomy( $value ) {
+	require_once __DIR__ . '/includes/class-terms-controller.php';
+
+	if ( is_string( $value ) && Terms_Controller::is_supported( $value ) ) {
+		return true;
+	}
+
+	return new \WP_Error( 'rest_not_in_enum', __( 'taxonomy is not product_cat, product_brand or the taxonomy of a global product attribute.', 'bulkbird-helper' ) );
 }
 
 /**

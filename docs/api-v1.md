@@ -7,6 +7,7 @@ WooCommerce 8.0.3 / PHP 8.1 i WordPress 7.1.4 / WooCommerce 11.3.0 / PHP 8.3.
 stvarnim HTTP zahtjevima na obje testne stranice.
 **Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
 **Poglavlje 10 (`GET /terms/order`) — konačno, verzija `0.4.0`** (odobrio vlasnik 17. 11. 2026.).
+**Poglavlje 10.1 (taksonomije globalnih atributa u `GET /terms/order`) — konačno, verzija `0.5.0`** (odobrio vlasnik 18. 11. 2026.).
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`
@@ -78,7 +79,7 @@ Ne upisuje ništa u bazu.
 |---|---|---|
 | `plugin_version` | tekst | verzija plugina (SemVer), npr. `0.1.0` |
 | `api_version` | cijeli broj | `1`; mijenja se samo pri nekompatibilnoj promjeni |
-| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. `0.4.0`: i `terms.order`. Slijede: `changes` (faza 3), `sales` (faza 4) |
+| `features` | popis teksta | uključene funkcije. `0.1.0`: prazan popis. `0.2.0`: `media.read`, `media.upload`. `0.3.0`: i `media.upload_status`. `0.4.0`: i `terms.order`. `0.5.0`: i `terms.order.attributes`. Slijede: `changes` (faza 3), `sales` (faza 4) |
 | `wordpress_version` | tekst | npr. `7.1.4` |
 | `woocommerce_version` | tekst | npr. `11.3.0` |
 | `php_version` | tekst | `glavna.sporedna.izdanje`, bez dodataka distribucije, npr. `8.3.36` |
@@ -363,6 +364,66 @@ Primjeri odgovora u `fixtures/v1/`:
 - sastavljeni ručno: `terms-order.json` (svi slučajevi vrijednosti `order` na jednom mjestu: bez zapisa, negativan,
   `0`, isti broj) i `terms-order-taxonomy-not-found.json`. Oblik im je jednak snimljenima (404 je jednak znak po
   znak) i potvrđuje ga integracijski test.
+
+### 10.1 Vrijednosti globalnih atributa (`0.5.0`; `features` sadrži `terms.order.attributes`)
+
+Aditivna izmjena: `taxonomy` smije biti i taksonomija globalnog atributa trgovine (`pa_…`). Sve ostalo iz
+poglavlja 10 vrijedi nepromijenjeno (sposobnost, stranice, zaglavlja, ograničenje učestalosti, samo čitanje).
+`api_version` ostaje `1`. Klijent prije poziva provjerava značajku `terms.order.attributes`; plugin `0.4.0` za
+`pa_…` vraća 400.
+
+- **Koje taksonomije:** točno one koje WooCommerce navodi kao globalne atribute
+  (`wc_get_attribute_taxonomy_names()`), tj. `pa_` + `slug` atributa iz `wc/v3/products/attributes` (polje `slug`
+  ondje već sadrži prefiks `pa_`). Taksonomija s prefiksom `pa_` koja nije atribut WooCommercea, nepostojeća
+  taksonomija i sve druge taksonomije i dalje vraćaju **400** `rest_invalid_param`.
+- **Oblik odgovora je isti:** popis stavki s točno tri polja `id`, `parent`, `order`. `id` je ID vrijednosti (isti
+  kao u `wc/v3/products/attributes/<id>/terms`); `parent` je uvijek `0`; `order` je zapis redoslijeda (meta
+  polje pojma `order`) ili `null` kad zapisa nema.
+- **Redoslijed stavki** je onaj kojim trgovina prikazuje vrijednosti tog atributa (zadani `get_terms`; isti je
+  na proizvodu i na stranici proizvoda). Određuje ga postavka atributa „Default sort order”, koju klijent čita
+  iz WooCommerce REST-a (`wc/v3/products/attributes`, polje `order_by`; radi i ključem samo za čitanje):
+
+| `order_by` | Redoslijed |
+|---|---|
+| `menu_order` | kao kategorije: bez zapisa prvi, zatim brojčano uzlazno po `order`, isti broj po nazivu |
+| `name` | po nazivu (kolacijom baze) |
+| `name_num` | po brojčanoj vrijednosti početka naziva; vrijednosti s istim brojem nemaju određen međusobni poredak |
+| `id` | po ID-ju vrijednosti. **WooCommerce 8.0.3 ovu postavku ne provodi: redoslijed je po nazivu** |
+
+- `order` se vraća uz svaku postavku, ali ga trgovina koristi samo uz `menu_order`.
+- **WooCommerce stariji od 10.7.0** (izmjereno na 8.0.3; granica utvrđena čitanjem koda WooCommercea, ispravak je
+  PR woocommerce/woocommerce#63390): `menu_order` koji je za vrijednost atributa poslan kroz WooCommerce REST
+  zapisuje se pod drugi ključ (`order_<taksonomija>`), koji poredak trgovine ne čita. Za takvu vrijednost ova
+  putanja vraća `order: null` (to je ono što trgovina vidi), iako WooCommerce REST za nju vraća poslani
+  `menu_order`. Mjerenje: `docs/measurements/attribute-order.md`.
+- **Napomena za klijenta:** verziju WooCommercea čitaj iz `GET /bulkbird/v1/info` (`woocommerce_version`).
+  - Na WooCommerceu **10.7.0 ili novijem** `menu_order` vrijednosti atributa poslan kroz
+    `wc/v3/products/attributes/<id>/terms` mijenja poredak u trgovini (uz postavku `menu_order`).
+  - Na **starijem od 10.7.0** ga ne mijenja, a WooCommerce REST svejedno vraća poslani broj. Ondje redoslijed
+    vrijednosti atributa kroz WooCommerce REST nije moguće ni postaviti ni pouzdano pročitati; `order` iz ove
+    putanje je jedini pouzdan podatak, a postaviti ga može samo trgovac u administraciji.
+  - Nadogradnja WooCommercea ne seli stare zapise: vrijednost upisana kroz REST prije 10.7.0 i nakon nadogradnje
+    ovdje ima `order: null`, dok se `menu_order` ne pošalje ponovno.
+- **Tijelo greške 400 za nedopuštenu taksonomiju** ima isti oblik kao u `0.4.0` (`code`, `message`,
+  `data.status`, `data.params.taxonomy`, `data.details.taxonomy`), ali drugi tekst poruke:
+  `taxonomy is not product_cat, product_brand or the taxonomy of a global product attribute.` (prije:
+  `taxonomy is not one of product_cat and product_brand.`). Dopuštene taksonomije se više ne nabrajaju ni u
+  poruci ni u javnom opisu putanje (`/wp-json/bulkbird/v1`), jer nazivi atributa trgovine nisu javni.
+  `code` i status su isti.
+- Atribut koji WooCommerce navodi, a čija taksonomija nije registrirana: 404 `bulkbird_taxonomy_not_found`
+  (isto kao brendovi na trgovini bez brendova). U redovnom radu se ne događa.
+
+Primjeri odgovora u `fixtures/v1/` (snimljeni 18. 11. 2026. kroz WP-CLI kodom kontrolera s grane, jer je na
+stranicama još `0.4.0`; polja `attribute_order_by` i `note` opisuju slučaj; snimanje stvarnim HTTP-om slijedi
+nakon postavljanja):
+
+- teststore1 (WooCommerce 11.3.0): `terms-order-attribute-menu-order.new.json`, `-name.new.json`,
+  `-name-num.new.json`, `-id.new.json`;
+- teststoreold (WooCommerce 8.0.3): `terms-order-attribute-menu-order-rest-written.old.json` (sve `null`, po
+  nazivu), `terms-order-attribute-menu-order.old.json` (nakon upisa ključa `order`),
+  `terms-order-attribute-id.old.json` (po nazivu);
+- `terms-order-invalid-taxonomy-0.5.0.json`: tijelo greške 400 (sastavljeno ručno; integracijski test ga
+  uspoređuje znak po znak).
 
 ## 11. Odobrene razlike prema prvoj inačici specifikacije
 

@@ -4,7 +4,7 @@ Tags: woocommerce, bulkbird
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,9 @@ Bulkbird works without it; the plugin only unlocks extra features.
 Requires WooCommerce 8.0 or newer. Multisite is not supported in version 1.
 
 == Changelog ==
+
+= 0.5.0 =
+* GET /bulkbird/v1/terms/order also answers for the values of global product attributes (pa_* taxonomies).
 
 = 0.4.0 =
 * GET /bulkbird/v1/terms/order: the stored order of product categories and brands, telling "no record" apart from 0.

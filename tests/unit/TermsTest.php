@@ -1,6 +1,6 @@
 <?php
 /**
- * GET /terms/order (0.4.0; scenariji H2.90–H2.99).
+ * GET /terms/order (0.4.0; scenariji H2.90–H2.99) i vrijednosti globalnih atributa (0.5.0; H2.100–H2.106).
  *
  * @package Bulkbird\Helper\Tests
  */
@@ -144,6 +144,78 @@ final class TermsTest extends TestCase {
 		);
 	}
 
+	public function test_h2_101_attribute_taxonomies_are_exactly_those_woocommerce_lists(): void {
+		// pa_boja i pa_velicina su globalni atributi; pa_lazni je taksonomija koju je registrirao netko drugi.
+		BBH_Terms_State::$taxonomies = array( 'product_cat', 'product_tag', 'pa_boja', 'pa_velicina', 'pa_lazni' );
+		BBH_Terms_State::$attributes = array( 'pa_boja', 'pa_velicina' );
+
+		foreach ( array( 'product_cat', 'product_brand', 'pa_boja', 'pa_velicina' ) as $taxonomy ) {
+			self::assertTrue( Terms_Controller::is_supported( $taxonomy ), $taxonomy );
+			self::assertTrue( Bulkbird\Helper\rest_validate_terms_taxonomy( $taxonomy ), $taxonomy );
+		}
+		foreach ( array( 'pa_lazni', 'pa_', 'pa_nepostojeci', 'PA_BOJA', 'boja', 'product_tag', 'category', '', 'pa_boja ' ) as $taxonomy ) {
+			self::assertFalse( Terms_Controller::is_supported( $taxonomy ), $taxonomy );
+			$invalid = $this->call( array( 'taxonomy' => $taxonomy ) );
+			self::assertSame( 'rest_invalid_param', $invalid->get_error_code(), $taxonomy );
+			self::assertSame( array( 'status' => 400 ), $invalid->get_error_data() );
+			$refused = Bulkbird\Helper\rest_validate_terms_taxonomy( $taxonomy );
+			self::assertSame( 'rest_not_in_enum', $refused->get_error_code(), $taxonomy );
+			self::assertStringNotContainsString( 'pa_boja', $refused->get_error_message(), 'poruka ne nabraja atribute trgovine' );
+		}
+		foreach ( array( null, 5, array( 'pa_boja' ) ) as $not_a_string ) {
+			self::assertSame( 'rest_not_in_enum', Bulkbird\Helper\rest_validate_terms_taxonomy( $not_a_string )->get_error_code() );
+		}
+		self::assertSame( array(), BBH_Terms_State::$calls, 'za odbijenu taksonomiju se ništa ne čita' );
+
+		// Atribut koji WooCommerce navodi, ali taksonomija (još) nije registrirana: 404 kao za brendove.
+		BBH_Terms_State::$attributes[] = 'pa_novi';
+		self::assertSame( 'bulkbird_taxonomy_not_found', $this->call( array( 'taxonomy' => 'pa_novi' ) )->get_error_code() );
+	}
+
+	public function test_h2_102_h2_103_attribute_values_keep_the_shop_order_and_the_same_three_fields(): void {
+		BBH_Terms_State::$taxonomies       = array( 'product_cat', 'pa_boja' );
+		BBH_Terms_State::$attributes       = array( 'pa_boja' );
+		// Redom kojim ih trgovina daje za taj atribut; vrijednosti atributa nemaju roditelja.
+		BBH_Terms_State::$terms['pa_boja'] = array( 53 => 0, 54 => 0, 55 => 0, 56 => 0, 51 => 0, 52 => 0, 57 => 0 );
+		BBH_Terms_State::$meta             = array(
+			55 => array( 'order' => '-1' ),
+			56 => array( 'order' => '0' ),
+			51 => array( 'order' => '2' ),
+			52 => array( 'order' => '2' ),
+			57 => array( 'order' => '5' ),
+			// Zapis pod ključem koji WooCommerce 8.0 REST piše, a poredak trgovine ga ne čita: nije zapis redoslijeda.
+			53 => array( 'order_pa_boja' => '7' ),
+		);
+
+		$response = $this->call( array( 'taxonomy' => 'pa_boja' ) );
+		self::assertSame( 200, $response->status );
+		self::assertSame(
+			array(
+				array( 'id' => 53, 'parent' => 0, 'order' => null ),
+				array( 'id' => 54, 'parent' => 0, 'order' => null ),
+				array( 'id' => 55, 'parent' => 0, 'order' => -1 ),
+				array( 'id' => 56, 'parent' => 0, 'order' => 0 ),
+				array( 'id' => 51, 'parent' => 0, 'order' => 2 ),
+				array( 'id' => 52, 'parent' => 0, 'order' => 2 ),
+				array( 'id' => 57, 'parent' => 0, 'order' => 5 ),
+			),
+			$response->data
+		);
+		self::assertSame( array( '7', '1' ), array( $response->headers['X-WP-Total'], $response->headers['X-WP-TotalPages'] ) );
+		self::assertSame(
+			array(
+				array(
+					'taxonomy'   => 'pa_boja',
+					'hide_empty' => false,
+					'fields'     => 'id=>parent',
+				),
+			),
+			BBH_Terms_State::$calls,
+			'zadani popis bez ikakvog argumenta poretka: poredak određuje postavka atributa u trgovini'
+		);
+		self::assertSame( array( 55, 56 ), array_column( $this->call( array( 'taxonomy' => 'pa_boja', 'per_page' => 2, 'page' => 2 ) )->data, 'id' ) );
+	}
+
 	public function test_h2_95_route_is_read_only_and_needs_manage_woocommerce(): void {
 		Bulkbird\Helper\register_rest_routes();
 		list( , $route, $handlers ) = BBH_State::$routes[3];
@@ -152,8 +224,10 @@ final class TermsTest extends TestCase {
 		self::assertSame( 'GET', $handlers[0]['methods'] );
 		self::assertSame( array( 'taxonomy', 'page', 'per_page' ), array_keys( $handlers[0]['args'] ) );
 		self::assertTrue( $handlers[0]['args']['taxonomy']['required'] );
-		self::assertSame( array( 'product_cat', 'product_brand' ), $handlers[0]['args']['taxonomy']['enum'] );
-		self::assertSame( Terms_Controller::TAXONOMIES, $handlers[0]['args']['taxonomy']['enum'] );
+		// H2.101: dopuštene taksonomije se ne nabrajaju u opisu putanje (nazivi atributa trgovine nisu javni).
+		self::assertArrayNotHasKey( 'enum', $handlers[0]['args']['taxonomy'] );
+		self::assertSame( 'Bulkbird\\Helper\\rest_validate_terms_taxonomy', $handlers[0]['args']['taxonomy']['validate_callback'] );
+		self::assertSame( array( 'product_cat', 'product_brand' ), Terms_Controller::TAXONOMIES );
 		self::assertSame( array( 1, 1000, 100 ), array( $handlers[0]['args']['per_page']['minimum'], $handlers[0]['args']['per_page']['maximum'], $handlers[0]['args']['per_page']['default'] ) );
 
 		$callback = $handlers[0]['permission_callback'];
