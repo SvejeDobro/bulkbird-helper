@@ -230,7 +230,7 @@ final class AttributeTermsIntegrationTest extends WP_UnitTestCase {
 			);
 			$this->assertSame( wp_list_pluck( $by_name, 'name' ), $names );
 		} else {
-			$this->assertSame( array_keys( self::VALUES ), $names, 'redom ID-ja, tj. redom stvaranja' );
+			$this->assertSame( array_map( 'strval', array_keys( self::VALUES ) ), $names, 'redom ID-ja, tj. redom stvaranja' );
 		}
 	}
 
