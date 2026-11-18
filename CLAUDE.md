@@ -36,6 +36,11 @@ trgovine: naziv počinje s `bbh-test-`, status skica, uz ispis ID-ja prije brisa
 Dopuna (vlasnik, 17. 11. 2026.): i za **pojmove** (`product_cat`, `product_tag`, `product_brand`) koje stvore
 testovi plugina: naziv počinje s `bbh-test-`, uz ispis ID-ja; skripta `tests/tools/cleanup-test-terms.php`.
 
+**Brisanje testnih podataka uvijek s ispisom ID-ja** (pravilo vlasnika, 18. 11. 2026.) — i kad test ili alat na
+početku čisti ostatke prekinutog pokretanja. Nijedan poziv skripti `cleanup-test-*` ne smije odbaciti njihov
+ispis. Primjer greške: 18. 11. 2026. je `GAttributeTermsE2ETest` ostatke prekinutog pokretanja na teststore1
+obrisao bez ispisa ID-ja.
+
 Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni drugi proizvodi, ni narudžbe, ni datoteke.
 **Proizvodi `bbf-` (teststore1, ID 16942–16945) se nikad ne brišu**; `bbt-` su Bulkbirdovi i nisu moji.
 
@@ -50,6 +55,12 @@ Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni drugi 
   javiti vlasniku da napravi novi.
 - Ako poslovi nisu pokrenuti zbog potrošenih minuta ili limita potrošnje, javiti vlasniku odmah.
 - CI se pokreće na `main`, na granama `paket-*` i na oznakama `v*`.
+- **Postavljanje na stranice tek nakon zelenog CI-ja za samu oznaku** (pravilo vlasnika, 18. 11. 2026.): vrijedi
+  samo pokretanje kojem je ref oznaka (redak `push v…`), ne zeleno pokretanje istog commita na `main`.
+  `~/bin/ci-status --wait v1.2.3` zato za oznaku čeka upravo to pokretanje; ako ga nema, izlazi s 3. Prije
+  `bin/deploy.sh` provjeriti da je u ispisu redak `push v…` sa `SUCCESS`.
+  Primjer greške: `v0.5.0` je postavljen nakon zelenog #46 (`push main`, isti commit), prije nego što se
+  pojavilo pokretanje oznake #47 (naknadno zeleno).
 
 ## Stanje
 
