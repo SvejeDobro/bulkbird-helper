@@ -68,9 +68,32 @@ Na 8.0.3 REST za vrijednosti atributa čita i piše `menu_order` pod ključem **
 - REST na 8.0.3 stvara zapis pod svojim ključem i kad `menu_order` nije poslan (vrijednost `NULL`).
 - Kad se isti brojevi upišu i pod ključ `order` (u mjerenju: `BBH_PREPARE=1`, ono što radi povlačenje u
   administraciji), 8.0.3 reda jednako kao 11.3.0: `cimet, đon, dar, 9, Zebra, čaj, Ćup, 10`.
-- 11.3.0 čita i piše `order`. U kojoj je verziji između 8.0.3 i 11.3.0 REST ispravljen, nije utvrđeno.
-  (Nadogradnja na WooCommerce 3.6 preimenovala je stare ključeve `order_pa_…` u `order`; REST kontroler je
-  stari ključ nastavio koristiti.)
+- 11.3.0 čita i piše `order`. (Nadogradnja na WooCommerce 3.6 preimenovala je stare ključeve `order_pa_…` u
+  `order`; REST kontroler je stari ključ nastavio koristiti.)
+
+#### U kojoj je verziji WooCommercea REST ispravljen (utvrđeno 18. 11. 2026.)
+
+**Prva ispravna verzija: WooCommerce 10.7.0** (već od `10.7.0-beta.1`). Posljednja neispravna: 10.6.2.
+
+- Datoteka: `plugins/woocommerce/includes/rest-api/Controllers/Version1/class-wc-rest-product-attribute-terms-v1-controller.php`
+  (u paketu: `includes/rest-api/Controllers/Version1/…`), klasa `WC_REST_Product_Attribute_Terms_V1_Controller`
+  (nasljeđuju je kontroleri v2 i v3).
+- Funkcije: `prepare_item_for_response()` (čitanje `menu_order`) i `update_term_meta_fields()` (pisanje).
+  Do 10.6.2 obje koriste `'order_' . $this->taxonomy`, od 10.7.0 `'order'`.
+- Commit: <https://github.com/woocommerce/woocommerce/commit/73fee4f9705bd1d1109bae56abfbc043c5a2a276>
+  („Fix: Attribute terms REST API writes menu_order to wrong meta key”, 20. 3. 2026.), PR
+  <https://github.com/woocommerce/woocommerce/pull/63390>.
+- Isti commit dodaje `isset( $request['menu_order'] )`: od 10.7.0 se zapis piše samo kad je `menu_order`
+  poslan. Do 10.6.2 se piše uvijek, i `NULL` kad nije poslan (izmjereno gore na 8.0.3).
+- **Commit ne seli stare zapise.** Što je starija verzija kroz REST upisala pod `order_<taksonomija>`, nakon
+  nadogradnje ostaje ondje: poredak to i dalje ne čita, a REST od 10.7.0 čita `order`, kojeg za takvu
+  vrijednost nema.
+
+Kako je utvrđeno: čitanjem te datoteke na oznakama izdanja u repozitoriju `woocommerce/woocommerce` na
+GitHubu, bez instalacije. Grubo 8.0.3, 8.1.0, 8.5.0, 9.0.0, 9.5.0, 10.0.0, 10.5.0 (stari ključ) i 11.0.0,
+11.3.0 (novi), zatim svih 45 oznaka 10.5.x–11.0.x: sve do 10.6.2 imaju stari ključ, sve od `10.7.0-beta.1`
+novi. Popis commita te datoteke na GitHubu između 2021. i tog commita ne pokazuje izmjenu tih redaka.
+Ponašanje je izmjereno samo na 8.0.3 i 11.3.0; za verzije između vrijedi ono što piše u kodu.
 
 Za klijenta: na starijem WooCommerceu se redoslijed vrijednosti atributa kroz WooCommerce REST ne može ni
 pouzdano pročitati ni postaviti. `GET /bulkbird/v1/terms/order` vraća ono što poredak stvarno čita (ključ
