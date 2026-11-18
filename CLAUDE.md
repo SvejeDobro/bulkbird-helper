@@ -67,6 +67,11 @@ uz odobrenje vlasnika.
   (odluka vlasnika 16. 11. 2026.); razlog je u `docs/proposals/0.4.0-unfiltered-html.md`. Ne briše se.
 - `0.4.0` (`GET /terms/order`, zapis redoslijeda pojmova; ugovor poglavlje 10) je izdan (oznaka `v0.4.0`,
   odobrio vlasnik 17. 11. 2026.) i aktivan na obje stranice. Nakon toga plugin miruje.
+- Grana `paket-0.5.0-atributi` (18. 11. 2026.): `GET /terms/order` prima i taksonomije globalnih atributa
+  (`pa_…`), značajka `terms.order.attributes`; nacrt u ugovoru (poglavlje 10.1), mjerenje u
+  `docs/measurements/attribute-order.md`. **Ne tagirati, ne spajati, ne postavljati dok vlasnik ne odobri.**
+- Dopuna trajnog odobrenja za brisanje (vlasnik, 18. 11. 2026.): i testni **globalni atributi** `bbh-test-` s
+  vrijednostima, uz ispis ID-ja; skripta `tests/tools/cleanup-test-attributes.php`.
 - teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.
 
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.

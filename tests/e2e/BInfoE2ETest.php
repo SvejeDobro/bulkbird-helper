@@ -69,6 +69,9 @@ final class BInfoE2ETest extends E2ECase {
 		if ( version_compare( $info['plugin_version'], '0.4.0', '>=' ) ) {
 			$features[] = 'terms.order'; // H2.90.
 		}
+		if ( version_compare( $info['plugin_version'], '0.5.0', '>=' ) ) {
+			$features[] = 'terms.order.attributes'; // H2.100.
+		}
 		self::assertSame( $features, $info['features'] );
 		self::assertSame( array( 'upload_mime_types', 'upload_max_bytes' ), array_keys( $info['media'] ) );
 		self::assertSame( min( $info['max_upload_bytes'], 20971520 ), $info['media']['upload_max_bytes'] );

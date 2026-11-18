@@ -287,6 +287,21 @@ Poznata praznina: stanje `in_progress` stvarnim HTTP-om nije izvedivo pouzdano
 Namjerni kvarovi: H2.90, H2.91 (vlastiti poredak), H2.92a (bez zapisa kao 0), H2.92b (0 kao bez zapisa), H2.93,
 H2.94a, H2.94b (bilo koja taksonomija), H2.95 (bez provjere sposobnosti), H2.97 (naziv u odgovoru).
 
+## Redoslijed vrijednosti globalnih atributa — `GET /terms/order?taxonomy=pa_…` (`0.5.0`, zadatak vlasnika 18. 11. 2026.)
+
+| ID | Scenarij | Očekivano |
+|---|---|---|
+| H2.100 | `/info` na 0.5.0 | `features` sadrži `terms.order.attributes` (uz `terms.order`); `api_version` ostaje 1 |
+| H2.101 | Koje taksonomije | točno one iz `wc_get_attribute_taxonomy_names()`; `pa_` taksonomija koja nije atribut WooCommercea, nepostojeća i sve druge: 400 `rest_invalid_param`; opis putanje i poruka greške ne nabrajaju atribute trgovine |
+| H2.102 | Redoslijed prema postavci atributa (`menu_order`, `name`, `name_num`, `id`) | jednak zadanom `get_terms()` trgovine; plugin ne zadaje vlastiti poredak; `name_num` stvarno brojčano; `id` po ID-ju (na WooCommerceu 8.0 po nazivu) |
+| H2.103 | Oblik i zapis | točno `id`, `parent` (0), `order`; bez zapisa `null`, zapis 0 je `0`, negativan ostaje negativan; zapis se vraća uz svaku postavku; `menu_order` poslan kroz WooCommerce REST: `order` je ono što poredak trgovine čita (na WooCommerceu 8.0 `null`) |
+| H2.104 | Dozvole | kao H2.95, i za taksonomiju atributa (401 i 403 prije 400) |
+| H2.105 | Ništa se ne mijenja | jedini upis je brojač učestalosti; vrijednost bez zapisa i dalje nema zapis; postavka atributa ista; broj upita ne ovisi o broju vrijednosti |
+| H2.106 | Stvarnim HTTP-om (kad 0.5.0 bude na stranicama) | testni atribut `bbh-test-atribut`: uz svaku od četiri postavke odgovor jednak probi `get_terms()` na obje trgovine; testni atribut se na kraju briše uz ispis ID-ja |
+
+Namjerni kvarovi: H2.100, H2.101a (atributi se ne primaju), H2.101b (svaki `pa_`), H2.101c (enum u opisu putanje),
+H2.101d (provjera parametra propušta sve).
+
 ## Poznate praznine (stanje 15. 11. 2026.)
 
 | Scenarij | Što nije izvedeno | Razlog | Što ga ipak pokriva |
