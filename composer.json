@@ -42,7 +42,10 @@
             "@unit",
             "@guards"
         ],
-        "e2e": "phpunit --testsuite e2e --bootstrap tests/e2e/bootstrap.php --testdox",
+        "e2e": [
+            "Composer\\Config::disableProcessTimeout",
+            "phpunit --testsuite e2e --bootstrap tests/e2e/bootstrap.php --testdox"
+        ],
         "faults": "bin/run-faults.sh"
     }
 }

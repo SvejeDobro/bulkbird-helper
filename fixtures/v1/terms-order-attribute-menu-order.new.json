@@ -1,6 +1,6 @@
 {
     "request": "GET /bulkbird/v1/terms/order?taxonomy=pa_bbh-test-atribut&per_page=1000",
-    "captured": "Snimljeno 18. 11. 2026. kroz WP-CLI kodom kontrolera s grane paket-0.5.0-atributi (plugin na stranici je još 0.4.0); testni atribut bbh-test-atribut, nakon snimanja obrisan.",
+    "captured": "Snimljeno 18. 11. 2026. stvarnim HTTP-om (plugin 0.5.0 iz oznake v0.5.0, ključ samo za čitanje); testni atribut bbh-test-atribut, nakon snimanja obrisan.",
     "attribute_order_by": "menu_order",
     "note": "Vrijednosti redom stvaranja (ID uzlazno): čaj (2), Ćup (2), cimet (bez zapisa), đon (bez zapisa), dar (-1), 9 (0), 10 (5), Zebra (1); svi nazivi imaju prefiks bbh-test-. Poredak: bez zapisa prvi, zatim brojčano, isti broj po nazivu.",
     "status": 200,
@@ -10,42 +10,42 @@
     },
     "body": [
         {
-            "id": 230,
+            "id": 253,
             "parent": 0,
             "order": null
         },
         {
-            "id": 231,
+            "id": 254,
             "parent": 0,
             "order": null
         },
         {
-            "id": 232,
+            "id": 255,
             "parent": 0,
             "order": -1
         },
         {
-            "id": 233,
+            "id": 256,
             "parent": 0,
             "order": 0
         },
         {
-            "id": 235,
+            "id": 258,
             "parent": 0,
             "order": 1
         },
         {
-            "id": 228,
+            "id": 251,
             "parent": 0,
             "order": 2
         },
         {
-            "id": 229,
+            "id": 252,
             "parent": 0,
             "order": 2
         },
         {
-            "id": 234,
+            "id": 257,
             "parent": 0,
             "order": 5
         }

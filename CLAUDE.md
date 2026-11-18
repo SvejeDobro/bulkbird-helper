@@ -71,6 +71,7 @@ uz odobrenje vlasnika.
   (`pa_…`), značajka `terms.order.attributes`; ugovor poglavlje 10.1, mjerenje u
   `docs/measurements/attribute-order.md` (WooCommerce REST do 10.6.2 piše `menu_order` vrijednosti atributa pod
   ključ koji poredak ne čita; ispravljeno u 10.7.0).
+  Izdan (oznaka `v0.5.0`) i aktivan na obje stranice. Nakon toga plugin miruje.
 - Dopuna trajnog odobrenja za brisanje (vlasnik, 18. 11. 2026.): i testni **globalni atributi** `bbh-test-` s
   vrijednostima, uz ispis ID-ja; skripta `tests/tools/cleanup-test-attributes.php`.
 - teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.

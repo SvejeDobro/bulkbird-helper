@@ -413,9 +413,9 @@ poglavlja 10 vrijedi nepromijenjeno (sposobnost, stranice, zaglavlja, ograničen
 - Atribut koji WooCommerce navodi, a čija taksonomija nije registrirana: 404 `bulkbird_taxonomy_not_found`
   (isto kao brendovi na trgovini bez brendova). U redovnom radu se ne događa.
 
-Primjeri odgovora u `fixtures/v1/` (snimljeni 18. 11. 2026. kroz WP-CLI kodom kontrolera s grane, jer je na
-stranicama još `0.4.0`; polja `attribute_order_by` i `note` opisuju slučaj; snimanje stvarnim HTTP-om slijedi
-nakon postavljanja):
+Primjeri odgovora u `fixtures/v1/` (snimljeni 18. 11. 2026. stvarnim HTTP-om s plugina `0.5.0`,
+`tests/tools/write-attribute-fixtures.php`; polja `attribute_order_by` i `note` opisuju slučaj; prema ranijim
+primjerima, snimljenima kroz WP-CLI kodom s grane, razlikuju se samo ID-jevi vrijednosti):
 
 - teststore1 (WooCommerce 11.3.0): `terms-order-attribute-menu-order.new.json`, `-name.new.json`,
   `-name-num.new.json`, `-id.new.json`;
@@ -423,7 +423,7 @@ nakon postavljanja):
   nazivu), `terms-order-attribute-menu-order.old.json` (nakon upisa ključa `order`),
   `terms-order-attribute-id.old.json` (po nazivu);
 - `terms-order-invalid-taxonomy-0.5.0.json`: tijelo greške 400 (sastavljeno ručno; integracijski test ga
-  uspoređuje znak po znak).
+  uspoređuje znak po znak, a stvarni odgovor obje trgovine mu je jednak).
 
 ## 11. Odobrene razlike prema prvoj inačici specifikacije
 

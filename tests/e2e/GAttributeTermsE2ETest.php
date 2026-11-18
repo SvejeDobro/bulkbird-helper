@@ -31,7 +31,10 @@ final class GAttributeTermsE2ETest extends E2ECase {
 		if ( version_compare( (string) self::site()['plugin_version'], '0.5.0', '<' ) ) {
 			self::markTestSkipped( 'Na stranici je plugin stariji od 0.5.0.' );
 		}
-		self::wpcli( 'tests/tools/cleanup-test-attributes.php' ); // Ostaci prekinutog pokretanja.
+		$left = self::wpcli( 'tests/tools/cleanup-test-attributes.php' ); // Ostaci prekinutog pokretanja.
+		if ( array() !== $left['attributes'] || array() !== $left['terms'] || array() !== $left['products'] ) {
+			fwrite( STDERR, sprintf( "\n[čišćenje ostataka] atribut ID: %s; vrijednosti ID: %s; skice ID: %s\n", implode( ', ', $left['attributes'] ), implode( ', ', $left['terms'] ), implode( ', ', $left['products'] ) ) );
+		}
 		$created = self::tool( 'create' );
 		if ( 201 !== $created['attribute']['status'] ) {
 			throw new RuntimeException( 'Testni atribut nije stvoren: status ' . $created['attribute']['status'] );
