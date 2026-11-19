@@ -1,10 +1,12 @@
 {
-    "plugin_version": "0.3.0",
+    "plugin_version": "0.5.0",
     "api_version": 1,
     "features": [
         "media.read",
         "media.upload",
-        "media.upload_status"
+        "media.upload_status",
+        "terms.order",
+        "terms.order.attributes"
     ],
     "wordpress_version": "7.1.4",
     "woocommerce_version": "11.3.0",
@@ -15,7 +17,16 @@
     "max_upload_bytes": 67108864,
     "memory_limit": 536870912,
     "max_execution_time": 60,
-    "detected_plugins": [],
+    "detected_plugins": [
+        {
+            "slug": "beaver-builder-lite-version",
+            "version": "2.11.1.2"
+        },
+        {
+            "slug": "elementor",
+            "version": "4.4.0"
+        }
+    ],
     "analytics_lookup": "complete",
     "media": {
         "upload_mime_types": [
