@@ -8,6 +8,8 @@ stvarnim HTTP zahtjevima na obje testne stranice.
 **Poglavlje 9 (`GET /media/uploads/<client_upload_id>`) — konačno, verzija `0.3.0`** (odobrio vlasnik 15. 11. 2026.).
 **Poglavlje 10 (`GET /terms/order`) — konačno, verzija `0.4.0`** (odobrio vlasnik 17. 11. 2026.).
 **Poglavlje 10.1 (taksonomije globalnih atributa u `GET /terms/order`) — konačno, verzija `0.5.0`** (odobrio vlasnik 18. 11. 2026.).
+**Verzija `0.5.1` (19. 11. 2026.) dodaje samo tekst licence (`license.txt`): ugovor je nepromijenjen od `0.5.0`**; razlikuje se
+jedino `plugin_version` u `/info`.
 Jedini izvor istine za Bulkbird stranu. Mijenja se samo uz odobrenje vlasnika projekta.
 
 - REST namespace: `bulkbird/v1` → adrese `https://<trgovina>/wp-json/bulkbird/v1/…`

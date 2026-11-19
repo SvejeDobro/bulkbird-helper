@@ -24,6 +24,14 @@ if echo "$LIST" | grep -E '^bulkbird-helper/(tests|docs|bin|fixtures|vendor|\.gi
   echo "paket sadrži razvojne datoteke" >&2; exit 1
 fi
 echo "$LIST" | grep -qx 'bulkbird-helper/bulkbird-helper.php' || { echo "paket nema glavnu datoteku" >&2; exit 1; }
+echo "$LIST" | grep -qx 'bulkbird-helper/readme.txt' || { echo "paket nema readme.txt" >&2; exit 1; }
+# Od 0.5.1 paket mora sadržavati puni tekst licence GPL-2.0 (starije oznake ga nemaju, pa se i dalje mogu izraditi).
+if [ "$(printf '%s\n' "0.5.1" "$VERSION" | sort -V | head -1)" = "0.5.1" ]; then
+  echo "$LIST" | grep -qx 'bulkbird-helper/license.txt' || { echo "paket nema license.txt" >&2; exit 1; }
+  LICENSE=$(unzip -p "$OUT" bulkbird-helper/license.txt)
+  echo "$LICENSE" | grep -q 'GNU GENERAL PUBLIC LICENSE' && echo "$LICENSE" | grep -q 'Version 2, June 1991' && echo "$LICENSE" | grep -q 'END OF TERMS AND CONDITIONS' \
+    || { echo "license.txt nije puni tekst GPL-2.0" >&2; exit 1; }
+fi
 ( cd build && sha256sum "bulkbird-helper-$VERSION.zip" > "bulkbird-helper-$VERSION.zip.sha256" )
 echo "paket: $OUT ($(echo "$LIST" | grep -vc '/$') datoteka)"
 cat "build/bulkbird-helper-$VERSION.zip.sha256"

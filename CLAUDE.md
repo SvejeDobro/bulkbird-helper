@@ -22,6 +22,12 @@ smiju biti u `~/.config/bulkbird-helper/test.env` (dozvole 600, izvan repozitori
 ispunjava skripta bez ispisa ili vlasnik. Nikad ključ stvarnog korisnika ili produkcije. Ako ključ
 dospije u log, razgovor ili repozitorij: odmah ga opozvati, stvoriti novi i javiti vlasniku.
 
+**Vrijednosti iz `test.env` nikad u datoteku, ni privremenu** (pravilo vlasnika, 19. 11. 2026.): ni u scratchpad,
+ni u `/tmp`, ni „samo nakratko”. Za usporedbu (npr. traženje secreta u paketu ili logu) čitaju se iz okoline
+procesa: program sam učita `test.env` u memoriju ili ih dobije kroz varijable okoline, i ispisuje samo broj pogodaka.
+Primjer greške: 19. 11. 2026. su pri provjeri zipa vrijednosti nakratko zapisane u datoteku u scratchpadu; K_READ i
+K_RW su zbog toga zamijenjeni na obje stranice.
+
 ## Brisanje testnih slika (trajno odobrenje vlasnika, 15. 11. 2026., odluka P17)
 
 Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
@@ -82,7 +88,9 @@ uz odobrenje vlasnika.
   (`pa_…`), značajka `terms.order.attributes`; ugovor poglavlje 10.1, mjerenje u
   `docs/measurements/attribute-order.md` (WooCommerce REST do 10.6.2 piše `menu_order` vrijednosti atributa pod
   ključ koji poredak ne čita; ispravljeno u 10.7.0).
-  Izdan (oznaka `v0.5.0`) i aktivan na obje stranice. Nakon toga plugin miruje.
+  Izdan (oznaka `v0.5.0`).
+- `0.5.1` (odobrio vlasnik 19. 11. 2026.): dodaje samo `license.txt` (puni tekst GPL-2.0); kod i ugovor su
+  nepromijenjeni od `0.5.0`. `bin/build-zip.sh` od 0.5.1 pada ako paket nema `license.txt`. Nakon toga plugin miruje.
 - Dopuna trajnog odobrenja za brisanje (vlasnik, 18. 11. 2026.): i testni **globalni atributi** `bbh-test-` s
   vrijednostima, uz ispis ID-ja; skripta `tests/tools/cleanup-test-attributes.php`.
 - teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.
