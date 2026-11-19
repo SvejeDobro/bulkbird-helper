@@ -11,22 +11,6 @@ use PHPUnit\Framework\TestCase;
 
 abstract class E2ECase extends TestCase {
 
-	/** Netajni opis testnih stranica na ovom serveru. */
-	private const TARGETS = array(
-		'NEW' => array(
-			'ssh'   => '',
-			'wpcli' => '/home/bulkbird-teststore1/bin/wp83',
-			'logs'  => array( '/home/bulkbird-teststore1/logs/wp/wp-debug.log', '/home/bulkbird-teststore1/logs/php/error.log' ),
-			'access' => '/home/bulkbird-teststore1/logs/nginx/access.log*',
-		),
-		'OLD' => array(
-			'ssh'   => 'teststoreold',
-			'wpcli' => '~/bin/wp81',
-			'logs'  => array( '/home/bulkbird-teststoreold/logs/php/error.log', '/home/bulkbird-teststoreold/logs/wp-debug.log' ),
-			'access' => '/home/bulkbird-teststoreold/logs/nginx/access.log*',
-		),
-	);
-
 	/** @var array<string, string>|null */
 	private static ?array $env = null;
 
@@ -35,10 +19,19 @@ abstract class E2ECase extends TestCase {
 
 	public static function target(): string {
 		$target = strtoupper( (string) ( getenv( 'BBH_TARGET' ) ?: 'NEW' ) );
-		if ( ! isset( self::TARGETS[ $target ] ) ) {
+		if ( ! in_array( $target, array( 'NEW', 'OLD' ), true ) ) {
 			throw new RuntimeException( 'BBH_TARGET mora biti NEW ili OLD.' );
 		}
 		return $target;
+	}
+
+	/**
+	 * Opis ciljne stranice (SSH alias, WP-CLI, logovi) iz okoline ili sites.env; vidi sites.env.example.
+	 *
+	 * @return array{ssh: string, home: string, host: string, wpcli: string, logs: array<int, string>, access: string}
+	 */
+	private static function site_config(): array {
+		return bbh_site( self::target() );
 	}
 
 	/** @return array<string, string> */
@@ -179,9 +172,11 @@ abstract class E2ECase extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	protected static function wpcli( string $script, array $env = array() ): array {
-		$target  = self::TARGETS[ self::target() ];
+		$target = self::site_config();
 		$path    = dirname( __DIR__, 2 ) . '/' . $script;
 		$assigns = '';
+		// Alati koji brišu ili mijenjaju rade samo na hostu s ovog popisa.
+		$env = array( 'BBH_TEST_HOSTS' => $target['host'] ) + $env;
 		foreach ( $env as $name => $value ) {
 			$assigns .= $name . '=' . escapeshellarg( $value ) . ' ';
 		}
@@ -230,7 +225,7 @@ abstract class E2ECase extends TestCase {
 
 	/** Broj redaka u logovima stranice koji spominju plugin ili izgledaju kao REST ključ. */
 	protected static function suspicious_log_lines(): int {
-		$target = self::TARGETS[ self::target() ];
+		$target = self::site_config();
 		$files  = implode( ' ', array_map( 'escapeshellarg', $target['logs'] ) );
 		$grep   = "cat $files 2>/dev/null | grep -ciE 'bulkbird-helper|Bulkbird.Helper|c[ks]_[0-9a-f]{8}'";
 		$cmd    = '' === $target['ssh'] ? $grep : 'ssh -o BatchMode=yes ' . escapeshellarg( $target['ssh'] ) . ' ' . escapeshellarg( $grep );
@@ -239,7 +234,7 @@ abstract class E2ECase extends TestCase {
 
 	/** Broj redaka u zapisima nginxa stranice koji sadrže zadani tekst. Tekst ide standardnim ulazom, ne u naredbu. */
 	protected static function access_log_lines_containing( string $needle ): int {
-		$target = self::TARGETS[ self::target() ];
+		$target = self::site_config();
 		$grep   = 'cat ' . $target['access'] . ' 2>/dev/null | grep -cF -f /dev/stdin';
 		$cmd    = '' === $target['ssh'] ? $grep : 'ssh -o BatchMode=yes ' . escapeshellarg( $target['ssh'] ) . ' ' . escapeshellarg( $grep );
 		$pipes  = array();

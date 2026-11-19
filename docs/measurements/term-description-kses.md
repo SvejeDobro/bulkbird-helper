@@ -1,10 +1,10 @@
 # Opis pojma kroz WooCommerce REST: što se spremi i ovisi li o `unfiltered_html`
 
-17. 11. 2026. · za Bulkbird paket 3b · teststore1 (WordPress 7.1.4, WooCommerce 11.3.0) i teststoreold
+17. 11. 2026. · za Bulkbird paket 3b · testna trgovina A (WordPress 7.1.4, WooCommerce 11.3.0) i testna trgovina B
 (WordPress 6.4.14, WooCommerce 8.0.3). Mjereno alatom `tests/tools/probe-term-description.php`: za svaku
 taksonomiju i korisnika stvoren je pojam `bbh-test-…` (`POST`), zatim izmijenjen istim opisom (`PUT`) i
 pročitan (`GET`); spremljeno je čitano ravno iz baze. Nakon mjerenja svi su testni pojmovi obrisani
-(teststore1: 6, ID 167–172; teststoreold: 4, ID 148–151). Ništa drugo u trgovinama nije mijenjano.
+(testna trgovina A: 6, ID 167–172; testna trgovina B: 4, ID 148–151). Ništa drugo u trgovinama nije mijenjano.
 
 Korisnici: **Shop manager** (ključ K_RW; `unfiltered_html = false`) i **administrator** (prijava kolačićem;
 `unfiltered_html = true`). Putanje: `wc/v3/products/categories`, `/tags`, `/brands`.
@@ -82,4 +82,4 @@ Prijelazi u novi red između dijelova su sačuvani.
 - Ključ administratora nije stvaran (pravilo vlasnika); administrator je mjeren prijavom kolačićem, koja
   prolazi isti kod.
 - Trgovina s temom ili dodatkom koji mijenja filtre opisa pojma. Obje testne trgovine su zadane
-  (Storefront; Elementor i Beaver Builder na teststore1 nisu promijenili ishod).
+  (Storefront; Elementor i Beaver Builder na testnoj trgovini A nisu promijenili ishod).

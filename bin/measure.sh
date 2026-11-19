@@ -13,15 +13,14 @@ cd "$(dirname "$0")/.."
 
 ACTION="${1:-}"; TARGET="${2:-}"; LABEL="${3:-}"
 ENV_FILE="${BBH_ENV_FILE:-$HOME/.config/bulkbird-helper/test.env}"
-case "$TARGET" in
-  new) SITE_HOME="/home/bulkbird-teststore1";   SITE="teststore1.bulkbird.app";   PFX=NEW ;;
-  old) SITE_HOME="/home/bulkbird-teststoreold"; SITE="teststoreold.bulkbird.app"; PFX=OLD ;;
-  *) echo "drugi argument mora biti new ili old" >&2; exit 1 ;;
-esac
+# Adrese, korisnici i putanje stranica: iz okoline ili iz sites.env (vidi sites.env.example).
+source bin/sites-env.sh
+bbh_site "$TARGET"
+PFX="$SITE_PFX"
 MU_DIR="$SITE_HOME/htdocs/$SITE/wp-content/mu-plugins"
 MU_FILE="$MU_DIR/bulkbird-measure.php"
 LOG="$SITE_HOME/logs/bulkbird-measure.log"
-remote() { if [ "$TARGET" = "new" ]; then bash -c "$1"; else ssh -o BatchMode=yes teststoreold "$1"; fi; }
+remote() { bbh_remote "$1"; }
 envget() { sed -nE "s/^$1=(.*)$/\1/p" "$ENV_FILE" | tail -1; }
 
 case "$ACTION" in

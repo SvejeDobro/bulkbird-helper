@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Postavljanje plugina na testnu stranicu ISKLJUČIVO iz git oznake (scenariji H0.61–H0.70).
 #
-#   bin/deploy.sh v0.1.0 new     # teststore1.bulkbird.app (ovaj korisnik)
-#   bin/deploy.sh v0.1.0 old     # teststoreold.bulkbird.app (preko SSH aliasa teststoreold)
+#   bin/deploy.sh v0.1.0 new     # stranica NEW iz sites.env
+#   bin/deploy.sh v0.1.0 old     # stranica OLD iz sites.env (lokalno ili preko SSH aliasa)
+#
+# Adrese, korisnici i putanje stranica nisu u repozitoriju: čitaju se iz okoline ili iz
+# ~/.config/bulkbird-helper/sites.env (vidi sites.env.example).
 #
 # - Prima samo oznaku (ne granu, ne commit); verzija u zaglavlju plugina mora biti jednaka oznaci.
 # - Paket nastaje kroz `git archive` oznake, pa izmjene u radnoj kopiji ne mogu ući u paket.
@@ -15,11 +18,9 @@ TAG="${1:-}"; TARGET="${2:-}"
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]] || { echo "prvi argument mora biti oznaka oblika v1.2.3" >&2; exit 1; }
 git rev-parse -q --verify "refs/tags/$TAG" > /dev/null || { echo "oznaka $TAG ne postoji (postavlja se samo iz oznake)" >&2; exit 1; }
 
-case "$TARGET" in
-  new) RUN=(bash -c);                                   SITE_HOME="/home/bulkbird-teststore1";   SITE="teststore1.bulkbird.app";   WP='~/bin/wp83' ;;
-  old) RUN=(ssh -o BatchMode=yes teststoreold bash -c); SITE_HOME="/home/bulkbird-teststoreold"; SITE="teststoreold.bulkbird.app"; WP='~/bin/wp81' ;;
-  *) echo "drugi argument mora biti new ili old" >&2; exit 1 ;;
-esac
+source bin/sites-env.sh
+bbh_site "$TARGET"
+WP="$SITE_WPCLI"
 PLUGINS="$SITE_HOME/htdocs/$SITE/wp-content/plugins"
 
 bin/build-zip.sh "$TAG" > /dev/null
@@ -28,12 +29,12 @@ ZIP="build/bulkbird-helper-$VERSION.zip"
 SHA=$(cut -d' ' -f1 "$ZIP.sha256")
 TS=$(date +%Y%m%d-%H%M%S)
 
-remote() { if [ "$TARGET" = "new" ]; then bash -c "$1"; else ssh -o BatchMode=yes teststoreold "$1"; fi; }
+remote() { bbh_remote "$1"; }
 
 # 1. Paket na stranicu (izvan web mape) i provjera SHA-256.
 STAGE="$SITE_HOME/tmp/bulkbird-helper-deploy-$TS"
 remote "umask 077; mkdir -p '$STAGE'"
-if [ "$TARGET" = "new" ]; then cp "$ZIP" "$STAGE/"; else scp -q -o BatchMode=yes "$ZIP" "teststoreold:$STAGE/"; fi
+if [ -z "$SITE_SSH" ]; then cp "$ZIP" "$STAGE/"; else scp -q -o BatchMode=yes "$ZIP" "$SITE_SSH:$STAGE/"; fi
 remote "cd '$STAGE' && echo '$SHA  bulkbird-helper-$VERSION.zip' | sha256sum -c - > /dev/null" || { echo "SHA-256 paketa na stranici se ne poklapa" >&2; exit 1; }
 
 # 2. Postojeća verzija se premješta, ne briše.

@@ -240,7 +240,7 @@ final class MediaTest extends TestCase {
 
 	public function test_h1_14_filename_is_a_bare_name(): void {
 		self::assertSame( 'mh01-black_main.jpg', Media_Library::filename( '2026/11/mh01-black_main.jpg', '' ) );
-		self::assertSame( 'x.jpg', Media_Library::filename( '/home/user/htdocs/wp-content/uploads/2026/11/x.jpg', '' ) );
+		self::assertSame( 'x.jpg', Media_Library::filename( '/var/www/shop/wp-content/uploads/2026/11/x.jpg', '' ) );
 		self::assertSame( 'y.png', Media_Library::filename( '', 'https://shop.example/wp-content/uploads/2026/11/y.png' ) );
 		self::assertSame( '2026-11-12T23:09:41', Media_Library::date( '2026-11-12 23:09:41' ) );
 		self::assertNull( Media_Library::date( '0000-00-00 00:00:00' ) );
@@ -452,7 +452,7 @@ final class MediaTest extends TestCase {
 	}
 
 	public function test_h2_30_unwritable_uploads_folder_fails_before_anything_is_moved(): void {
-		BBH_Media_State::$upload_dir_error = 'Unable to create directory /home/shop/wp-content/uploads/2026/11. Is its parent directory writable by the server?';
+		BBH_Media_State::$upload_dir_error = 'Unable to create directory /var/www/shop/wp-content/uploads/2026/11. Is its parent directory writable by the server?';
 		$tmp  = $this->image( 'jpeg' );
 		$file = array( 'name' => 'x.jpg', 'tmp_name' => $tmp, 'size' => 100, 'error' => 0, 'type' => 'image/jpeg' );
 
@@ -584,7 +584,7 @@ final class MediaTest extends TestCase {
 		self::assertSame( array( $id, 'in_progress', null, null ), array_values( Media_Rules::upload_status_body( $id, 'in_progress', $sha, $item ) ) );
 		// Slika bez spremljenog ili s neispravnim sažetkom: null, nikad prazan ili tuđi tekst.
 		self::assertNull( Media_Rules::upload_status_body( $id, 'stored', '', $item )['sha256'] );
-		self::assertNull( Media_Rules::upload_status_body( $id, 'stored', '/home/shop/x', $item )['sha256'] );
+		self::assertNull( Media_Rules::upload_status_body( $id, 'stored', '/var/www/shop/x', $item )['sha256'] );
 	}
 
 	public function test_h2_71_h2_76_status_route_is_read_only_and_needs_both_capabilities(): void {

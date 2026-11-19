@@ -1,11 +1,11 @@
 # Poredak pojmova i jednakost naziva (kategorije, oznake, brendovi)
 
-17. 11. 2026. · za Bulkbird paket 3b · teststore1 (WordPress 7.1.4, WooCommerce 11.3.0) i teststoreold
+17. 11. 2026. · za Bulkbird paket 3b · testna trgovina A (WordPress 7.1.4, WooCommerce 11.3.0) i testna trgovina B
 (WordPress 6.4.14, WooCommerce 8.0.3); obje MySQL 8.4.11 (Percona), tema Storefront 4.6.2.
 Alati: `tests/tools/probe-term-order.php` (stvara pojmove kroz WooCommerce REST, ključem Shop managera) i
 `tests/probe/term-order.php` (čita bazu, `get_terms()` i kod za prikaz, kroz WP-CLI).
-Svi pojmovi su se zvali `bbh-test-…` i nakon mjerenja su obrisani (teststore1: 36, ID 173–208;
-teststoreold: 25, ID 152–176; preostalo 0). Ništa drugo u trgovinama nije mijenjano.
+Svi pojmovi su se zvali `bbh-test-…` i nakon mjerenja su obrisani (testna trgovina A: 36, ID 173–208;
+testna trgovina B: 25, ID 152–176; preostalo 0). Ništa drugo u trgovinama nije mijenjano.
 
 ## Pravilo u jednoj rečenici
 
@@ -110,8 +110,8 @@ kategorija sa zadanim poretkom **ih nema**.
 
 **Widget kategorija izostavlja pojmove bez zapisa.** Widget za „redoslijed kategorija” traži
 `orderby => meta_value_num, meta_key => order`, što WordPress pretvara u `INNER JOIN` na taj zapis. Provjereno
-i brojem: na teststoreold tijekom mjerenja 151 kategorija, od toga 8 sa zapisom (sve testne), widget
-prikazuje 8; na teststore1 152 kategorije, 140 sa zapisom, widget prikazuje 140. Stvarne kategorije stare
+i brojem: na testnoj trgovini B tijekom mjerenja 151 kategorija, od toga 8 sa zapisom (sve testne), widget
+prikazuje 8; na testnoj trgovini A 152 kategorije, 140 sa zapisom, widget prikazuje 140. Stvarne kategorije stare
 trgovine (uvezene CSV-om) nemaju zapis `order`, pa ih taj widget u zadanom načinu ne bi prikazao. Isti kod je
 u obje verzije WooCommercea.
 

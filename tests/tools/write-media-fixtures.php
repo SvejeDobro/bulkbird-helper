@@ -72,7 +72,7 @@ $save = static function ( string $name, array $response, array $keep_headers = a
 		}
 	}
 	$out['body'] = $response['json'];
-	file_put_contents( $dir . '/' . $name . '.' . strtolower( $target ) . '.json', json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" );
+	file_put_contents( $dir . '/' . $name . '.' . strtolower( $target ) . '.json', str_replace( rtrim( $env[ "BBH_{$target}_URL" ], '/' ), 'https://example.com', (string) json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . "\n" ); // Adresa trgovine ne ulazi u primjere.
 	echo sprintf( "%-34s status %d\n", $name, $response['status'] );
 };
 

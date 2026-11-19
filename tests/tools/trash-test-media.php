@@ -2,7 +2,7 @@
 /**
  * Premješta JEDNU testnu sliku u smeće, za snimanje odgovora "trashed" (odobrio vlasnik 15. 11. 2026.).
  * Uvjeti su isti kao za brisanje testnih slika (odluka P17): naslov počinje s "bbh-test-" I slika ima meta
- * "_bulkbird_upload_id"; samo teststore1 i teststoreold; samo kroz WP-CLI. Ništa drugo se ne dira.
+ * "_bulkbird_upload_id"; samo testne stranice iz BBH_TEST_HOSTS; samo kroz WP-CLI. Ništa drugo se ne dira.
  *
  *   BBH_ATTACHMENT_ID=123 wp eval-file tests/tools/trash-test-media.php
  *
@@ -19,11 +19,11 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 	$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
 	$id   = (int) getenv( 'BBH_ATTACHMENT_ID' );
 	$post = get_post( $id );
-	if ( ! in_array( $host, array( 'teststore1.bulkbird.app', 'teststoreold.bulkbird.app' ), true )
+	if ( ! in_array( $host, array_filter( array_map( 'trim', explode( ',', (string) getenv( 'BBH_TEST_HOSTS' ) ) ) ), true )
 		|| ! $post || 'attachment' !== $post->post_type
 		|| 0 !== strpos( $post->post_title, 'bbh-test-' )
 		|| '' === (string) get_post_meta( $id, '_bulkbird_upload_id', true ) ) {
-		fwrite( STDERR, "Odbijeno: nije testna slika plugina na testnoj stranici.\n" );
+		fwrite( STDERR, "Odbijeno: nije testna slika plugina na testnoj stranici iz BBH_TEST_HOSTS.\n" );
 		exit( 1 );
 	}
 

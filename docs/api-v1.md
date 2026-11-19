@@ -101,7 +101,7 @@ Popis slugova koje `detected_plugins` može vratiti je u `includes/class-environ
 
 Odgovor nikad ne sadrži: putanje na disku, podatke baze, ključeve, salt, korisnike, e-mailove, ništa iz `wp-config.php`.
 
-Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o poslužitelju):
+Primjer (testna trgovina A; vrijednosti `memory_limit` i `max_execution_time` ovise o poslužitelju):
 
 ```json
 {
@@ -126,10 +126,10 @@ Primjer (teststore1; vrijednosti `memory_limit` i `max_execution_time` ovise o p
 }
 ```
 
-Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.json` (teststore1, najnovije verzije;
+Primjeri stvarnih odgovora za Bulkbird testove: `fixtures/v1/info.json` (testna trgovina A, najnovije verzije;
 isti sadržaj kao `fixtures/v1/info.new.json`) i `fixtures/v1/info.old.json` (stara testna stranica).
 
-Primjeri za `/media` (teststore1; svaki sadrži `status`, važna zaglavlja i `body`): `media-list.new.json`,
+Primjeri za `/media` (testna trgovina A; svaki sadrži `status`, važna zaglavlja i `body`): `media-list.new.json`,
 `media-list-empty.new.json`, `media-item-created.new.json` (201), `media-item-existing.new.json` (200) te
 greške `media-error-*.new.json` (401, 401 za ključ samo za čitanje, 403, 400, 409, 415).
 
@@ -306,7 +306,7 @@ Klijent razlikuje dva moguća 404 po polju `code`.
 
 Primjeri odgovora u `fixtures/v1/`: `media-upload-status-stored.json`, `-trashed.json`, `-not-found.json`,
 `-invalid-id.json`, `-unauthorized.json`, `-forbidden.json` su stvarni odgovori snimljeni 15. 11. 2026. na
-teststore1 s `0.3.0`. `-in-progress.json` je sastavljen ručno (stanje traje samo dok traje zahtjev `POST`), a
+testna trgovina A s `0.3.0`. `-in-progress.json` je sastavljen ručno (stanje traje samo dok traje zahtjev `POST`), a
 njegov oblik potvrđuje integracijski test.
 
 Nije dio `0.3.0` (odluke vlasnika 15. 11. 2026.): skupna provjera više ID-jeva odjednom i izmjena naslova ili
@@ -419,9 +419,9 @@ Primjeri odgovora u `fixtures/v1/` (snimljeni 18. 11. 2026. stvarnim HTTP-om s p
 `tests/tools/write-attribute-fixtures.php`; polja `attribute_order_by` i `note` opisuju slučaj; prema ranijim
 primjerima, snimljenima kroz WP-CLI kodom s grane, razlikuju se samo ID-jevi vrijednosti):
 
-- teststore1 (WooCommerce 11.3.0): `terms-order-attribute-menu-order.new.json`, `-name.new.json`,
+- testna trgovina A (WooCommerce 11.3.0): `terms-order-attribute-menu-order.new.json`, `-name.new.json`,
   `-name-num.new.json`, `-id.new.json`;
-- teststoreold (WooCommerce 8.0.3): `terms-order-attribute-menu-order-rest-written.old.json` (sve `null`, po
+- testna trgovina B (WooCommerce 8.0.3): `terms-order-attribute-menu-order-rest-written.old.json` (sve `null`, po
   nazivu), `terms-order-attribute-menu-order.old.json` (nakon upisa ključa `order`),
   `terms-order-attribute-id.old.json` (po nazivu);
 - `terms-order-invalid-taxonomy-0.5.0.json`: tijelo greške 400 (sastavljeno ručno; integracijski test ga

@@ -1,6 +1,6 @@
 # Nefiltrirani HTML: tko ga smije spremati i što WooCommerce REST radi s opisom
 
-16. 11. 2026. · teststore1 (WordPress 7.1.4, WooCommerce 11.3.0) i teststoreold (WordPress 6.4.14,
+16. 11. 2026. · testna trgovina A (WordPress 7.1.4, WooCommerce 11.3.0) i testna trgovina B (WordPress 6.4.14,
 WooCommerce 8.0.3) · na obje je Bulkbird Helper `0.3.0`. Mjereno alatom
 `tests/tools/probe-unfiltered-html.php` na jednoj skici proizvoda po trgovini (`bbh-test-unfiltered-1`);
 ostalo je pročitano iz baze i koda. Ništa drugo u trgovinama nije mijenjano.
@@ -48,7 +48,7 @@ Obrnuta kosa crta se, dakle, uklanja **i korisniku s `unfiltered_html`**.
 
 ## Tko ima `unfiltered_html`
 
-| | teststore1 | teststoreold |
+| | testna trgovina A | testna trgovina B |
 |---|---|---|
 | Multisite | ne | ne |
 | `DISALLOW_UNFILTERED_HTML` u `wp-config.php` | nije definirano | nije definirano |
@@ -75,5 +75,5 @@ uračunava, pa plugin vraća ono što WordPress kaže.
   Iste vrijednosti su pročitane izravno iz WordPressa (tablica gore).
 
 Alat za mjerenje (`tests/tools/probe-unfiltered-html.php`) je na grani `paket-0.4.0`. Skice
-`bbh-test-unfiltered-1` (teststore1 ID 16951, teststoreold ID 5011) su nakon mjerenja trajno obrisane uz
+`bbh-test-unfiltered-1` (testna trgovina A ID 16951, testna trgovina B ID 5011) su nakon mjerenja trajno obrisane uz
 odobrenje vlasnika.

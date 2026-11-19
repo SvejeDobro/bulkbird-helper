@@ -10,24 +10,43 @@ ravno u ~/.config/bulkbird-helper/test.env (600). Ispisuje se samo opis ključa,
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 
-TARGETS = {
-    "new": ("NEW", [os.path.expanduser("~/bin/wp83"), "eval-file", "-"]),
-    "old": ("OLD", ["ssh", "-o", "BatchMode=yes", "teststoreold", "BBH_ROTATE={names} $HOME/bin/wp81 eval-file -"]),
-}
+TARGETS = {"new": "NEW", "old": "OLD"}
+SITES_FILE = os.environ.get("BBH_SITES_FILE") or os.path.expanduser("~/.config/bulkbird-helper/sites.env")
 ENV_FILE = os.path.expanduser("~/.config/bulkbird-helper/test.env")
 SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rotate-test-keys.php")
+
+
+def site_config(prefix):
+    """Opis stranice iz okoline ili iz sites.env (vidi sites.env.example); u repozitoriju nema adresa ni putanja."""
+    values = {}
+    if os.path.isfile(SITES_FILE):
+        for line in open(SITES_FILE, encoding="utf-8"):
+            match = re.match(r"(BBH_SITE_[A-Z0-9_]+)=(.*)$", line.rstrip("\n"))
+            if match:
+                values[match.group(1)] = match.group(2)
+    site = {name: os.environ.get("BBH_SITE_%s_%s" % (prefix, name), values.get("BBH_SITE_%s_%s" % (prefix, name), "")) for name in ("SSH", "HOST", "WPCLI")}
+    missing = ["BBH_SITE_%s_%s" % (prefix, name) for name in ("HOST", "WPCLI") if not site[name]]
+    if missing:
+        sys.exit("Nisu postavljene varijable: %s. Postavite ih u okolini ili u datoteci %s (primjer: sites.env.example)." % (", ".join(missing), SITES_FILE))
+    return site
 
 
 def main():
     if len(sys.argv) != 3 or sys.argv[1] not in TARGETS or not re.fullmatch(r"K_[A-Z]+(,K_[A-Z]+)*", sys.argv[2]):
         sys.exit(__doc__)
-    prefix, command = TARGETS[sys.argv[1]]
+    prefix = TARGETS[sys.argv[1]]
     names = sys.argv[2]
-    command = [part.format(names=names) for part in command]
-    env = dict(os.environ, BBH_ROTATE=names)
+    site = site_config(prefix)
+    env = dict(os.environ, BBH_ROTATE=names, BBH_TEST_HOSTS=site["HOST"])
+    if site["SSH"]:
+        remote = "BBH_ROTATE=%s BBH_TEST_HOSTS=%s %s eval-file -" % (shlex.quote(names), shlex.quote(site["HOST"]), shlex.quote(site["WPCLI"]))
+        command = ["ssh", "-o", "BatchMode=yes", site["SSH"], remote]
+    else:
+        command = [site["WPCLI"], "eval-file", "-"]
 
     lines = open(ENV_FILE, encoding="utf-8").read().split("\n")
     for name in names.split(","):

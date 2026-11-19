@@ -13,9 +13,9 @@
         "modified_gmt": "2026-11-15T15:21:25",
         "parent_id": 0,
         "urls": {
-            "thumbnail": "https://teststore1.bulkbird.app/wp-content/uploads/2026/11/bbh-test-primjer-150x150.jpg",
-            "medium": "https://teststore1.bulkbird.app/wp-content/uploads/2026/11/bbh-test-primjer-300x225.jpg",
-            "full": "https://teststore1.bulkbird.app/wp-content/uploads/2026/11/bbh-test-primjer.jpg"
+            "thumbnail": "https://example.com/wp-content/uploads/2026/11/bbh-test-primjer-150x150.jpg",
+            "medium": "https://example.com/wp-content/uploads/2026/11/bbh-test-primjer-300x225.jpg",
+            "full": "https://example.com/wp-content/uploads/2026/11/bbh-test-primjer.jpg"
         }
     }
 }

@@ -5,8 +5,8 @@
  *
  * Samo za demo trgovine. Nikad na produkciji i nikad za stvarne korisnike.
  *
- * Pokretanje (primjer za teststore1):
- *   BBH_PREFIX=NEW ~/bin/wp83 eval-file tests/tools/provision-test-credentials.php
+ * Pokretanje (primjer za stranicu NEW):
+ *   BBH_PREFIX=NEW wp eval-file tests/tools/provision-test-credentials.php
  *
  * Varijable okoline:
  *   BBH_PREFIX    obavezno, npr. NEW ili OLD (prefiks naziva u env datoteci)
