@@ -229,7 +229,7 @@ kad krene razvoj; CC mu tada daje popis što treba.
 |---|---|
 | A. CI matrica na GitHub Actions | automatski pri svakom pushu, ne dira server; pokriva integracijske testove i multisite, ali ne stvarni nginx / Cloudflare |
 | B. Druga CloudPanel stranica na ovom serveru (npr. za stariju okolinu, PHP 8.1, WP 6.4.x, WC 8.0.x, mala demo trgovina) | jedina daje stvarne HTTP testove autentikacije na staroj verziji; mora je stvoriti vlasnik u CloudPanelu (ovaj korisnik nema ta prava) |
-| C. Kontejner na serveru | nije izvedivo: nema Dockera ni sudo prava |
+| C. Kontejner na serveru | nije izvedivo |
 
 A odmah, za svaki commit. B za scenarije poglavlja 1 i 6 na staroj verziji, jer se autentikacija
 WooCommerce ključem između 8.0 i 11.3 bitno razlikuje i mora se dokazati stvarnim zahtjevima. Za B
