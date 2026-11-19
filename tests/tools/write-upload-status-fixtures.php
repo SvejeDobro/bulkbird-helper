@@ -62,7 +62,7 @@ $save = static function ( string $name, array $response ) use ( $dir ): void {
 		'status' => $response['status'],
 		'body'   => $response['json'],
 	);
-	file_put_contents( $dir . '/' . $name . '.json', json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n" );
+	file_put_contents( $dir . '/' . $name . '.json', str_replace( rtrim( $env[ "BBH_{$target}_URL" ], '/' ), 'https://example.com', (string) json_encode( $out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . "\n" ); // Adresa trgovine ne ulazi u primjere.
 	echo sprintf( "%-40s status %d, retry-after: %s\n", $name, $response['status'], $response['headers']['retry-after'] ?? '-' );
 };
 

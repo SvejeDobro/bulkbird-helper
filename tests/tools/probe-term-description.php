@@ -14,6 +14,8 @@
 
 declare( strict_types=1 );
 
+require_once __DIR__ . '/sites.php';
+
 $target = strtoupper( (string) ( getenv( 'BBH_TARGET' ) ?: 'NEW' ) );
 $env    = array();
 foreach ( (array) file( (string) getenv( 'HOME' ) . '/.config/bulkbird-helper/test.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
@@ -22,9 +24,11 @@ foreach ( (array) file( (string) getenv( 'HOME' ) . '/.config/bulkbird-helper/te
 	}
 }
 $base  = rtrim( $env[ "BBH_{$target}_URL" ], '/' ) . '/wp-json/wc/v3/products/';
-$wpcli = 'NEW' === $target
-	? static fn( string $assign, string $file ): string => (string) shell_exec( $assign . ' /home/bulkbird-teststore1/bin/wp83 eval-file - < ' . escapeshellarg( $file ) . ' 2>/dev/null' )
-	: static fn( string $assign, string $file ): string => (string) shell_exec( 'ssh -o BatchMode=yes teststoreold ' . escapeshellarg( $assign . ' ~/bin/wp81 eval-file -' ) . ' < ' . escapeshellarg( $file ) . ' 2>/dev/null' );
+$site   = bbh_site( $target );
+$remote = static fn( string $assign ): string => $assign . ' ' . $site['wpcli'] . ' eval-file -';
+$wpcli  = '' === $site['ssh']
+	? static fn( string $assign, string $file ): string => (string) shell_exec( $remote( $assign ) . ' < ' . escapeshellarg( $file ) . ' 2>/dev/null' )
+	: static fn( string $assign, string $file ): string => (string) shell_exec( 'ssh -o BatchMode=yes ' . escapeshellarg( $site['ssh'] ) . ' ' . escapeshellarg( $remote( $assign ) ) . ' < ' . escapeshellarg( $file ) . ' 2>/dev/null' );
 $json_of = static function ( string $output ): array {
 	$start = strpos( $output, '{' );
 	return false === $start ? array() : (array) json_decode( substr( $output, $start ), true );

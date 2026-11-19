@@ -10,8 +10,8 @@ P7 objekt `media` u `/info`; P16 tablica pri prvom zahtjevu prema putanji plugin
 
 Oznake:
 
-- **NOVA** — teststore1.bulkbird.app (WordPress 7.1, WooCommerce 11.3, PHP 8.3)
-- **STARA** — teststoreold.bulkbird.app (WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1)
+- **NOVA** — testna trgovina A (WordPress 7.1, WooCommerce 11.3, PHP 8.3)
+- **STARA** — testna trgovina B (WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1)
 - **CI** — GitHub Actions (jedinični i integracijski testovi)
 - Ključevi i korisnici kao u fazi 0: K-READ, K-RW, K-WRITE (`bulkbird-test-shopmgr`), K-CUST (`bulkbird-test-customer`).
 
@@ -239,7 +239,7 @@ Testni podaci: prijenosi u testovima stvaraju stvarne privitke na testnim strani
 | P14 | `GET /media/<id>` | ne u ovom paketu |
 | P15 | Zahtjevi bez prijave | ne broje se u ograničenje učestalosti |
 | P16 | Brojači učestalosti | vlastita tablica `{prefix}bulkbird_rate`, stvara se **pri prvom zahtjevu prema putanji plugina** (nikad na stranicama za kupce); deinstalacija je briše; uz trajni object cache koristi se on |
-| P17 | Testne slike | **Trajno odobreno, usko:** testovi smiju trajno brisati samo privitke kojima naslov počinje s `bbh-test-` **i** koji imaju meta `_bulkbird_upload_id`, samo na teststore1 i teststoreold, kroz WP-CLI, uz ispis broja i ID-jeva prije brisanja. Ništa drugo. |
+| P17 | Testne slike | **Trajno odobreno, usko:** testovi smiju trajno brisati samo privitke kojima naslov počinje s `bbh-test-` **i** koji imaju meta `_bulkbird_upload_id`, samo na testnoj trgovini A i testna trgovina B, kroz WP-CLI, uz ispis broja i ID-jeva prije brisanja. Ništa drugo. |
 | P18 | Prozor ograničenja | fiksni prozor od 60 s |
 | P19 | Ograničenja | 120 zahtjeva / 30 prijenosa u minuti; filter `bulkbird_helper_rate_limits` |
 | P20 | Mjerni mu-plugin | traži se odobrenje kad dođe red |

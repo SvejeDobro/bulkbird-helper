@@ -6,7 +6,7 @@ datoteke plugina i vrijeme PHP-a. Mu-plugin je postavljen samo za vrijeme mjeren
 Svako mjerenje: 30 zahtjeva po stranici, svaki s jedinstvenim parametrom u adresi (da ne dođe iz cachea).
 „Prije” i „poslije” su mjereni po dvaput (a, b); razlika između a i b istog stanja je šum mjerenja.
 
-## Stara stranica — teststoreold.bulkbird.app
+## Stara stranica — testna trgovina B
 
 15. 11. 2026. · WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1 (FPM), Storefront 4.6.2, HPOS isključen.
 Plugin pri mjerenju „poslije”: `0.1.0-rc.1`. Varnish i Cloudflare ne spremaju ove odgovore
@@ -40,10 +40,10 @@ naslovnica 202 → 197 ms, trgovina 200–203 → 197 ms, košarica 163–165 �
 **Napomena uz H0.59.** Mjerenje je pokazalo da `0.1.0-rc.1` na svakom REST zahtjevu (i tuđem) učitava tri
 pomoćne datoteke, bez ijednog upita. U `0.1.0-rc.2` putanje se registriraju samo imenom funkcije, a klase se
 učitavaju tek kad se pozove naša putanja. Na staroj stranici to nije ponovno mjereno (treba novo odobrenje za
-mjerni mu-plugin); potvrđeno je mjerenjem na teststore1 (niže). U WP-CLI-ju se ne može provjeriti jer
+mjerni mu-plugin); potvrđeno je mjerenjem na testnoj trgovini A (niže). U WP-CLI-ju se ne može provjeriti jer
 WooCommerce ondje pri pokretanju čita sheme svih REST putanja.
 
-## teststore1.bulkbird.app
+## Testna trgovina A
 
 15. 11. 2026. · WordPress 7.1.4, WooCommerce 11.3.0, PHP 8.3 (FPM), Storefront 4.6.2, HPOS uključen.
 Plugin pri mjerenju „poslije”: `0.1.0-rc.2`. Varnish nije u putu zahtjeva (vlasnik je u vhostu postavio
@@ -86,7 +86,7 @@ Vrijeme kroz Cloudflare prije aktivacije (samo zapis): neprijavljen 175–189 ms
 
 ## Ponovljeno mjerenje izmjeničnim redoslijedom (15. 11. 2026.)
 
-Svrha: isključiti pomak opterećenja servera kao uzrok razlike od 2–4 ms iz prvog mjerenja na teststore1 i
+Svrha: isključiti pomak opterećenja servera kao uzrok razlike od 2–4 ms iz prvog mjerenja na testnoj trgovini A i
 potvrditi `0.1.0-rc.2` na staroj stranici. Redoslijed na obje stranice: **neaktivan, aktivan, neaktivan,
 aktivan, neaktivan, aktivan** (tri para), 30 zahtjeva po stranici u svakom koraku, plugin `0.1.0-rc.2`.
 Plugin je između koraka deaktiviran i aktiviran kroz WP-CLI; na kraju je ostao aktivan. Mjerni mu-plugin je
@@ -98,7 +98,7 @@ zahtjeva (`opcache.enable` = da, glavna datoteka plugina u cacheu, SAPI `fpm-fcg
 
 ### Vrijeme PHP-a (medijan od 30 zahtjeva, ms)
 
-teststore1 (WordPress 7.1.4, WooCommerce 11.3.0, PHP 8.3):
+testna trgovina A (WordPress 7.1.4, WooCommerce 11.3.0, PHP 8.3):
 
 | Stranica | Tko | Neaktivan (1 / 2 / 3) | Aktivan (1 / 2 / 3) | Prosjek neaktivan | Prosjek aktivan | Razlika |
 |---|---|---|---|---|---|---|
@@ -124,7 +124,7 @@ Stara stranica (WordPress 6.4.14, WooCommerce 8.0.3, PHP 8.1), neprijavljen posj
 | `GET /wc/v3/products` (ključ) | 134,8 / 133,3 / 141,9 | 136,5 / 134,9 / 136,5 | 136,7 | 136,0 | −0,7 |
 | `GET /bulkbird/v1/info` (ključ) | — | 127,6 / 130,5 / 128,1 | — | 128,7 | — |
 
-**Zaključak (H0.57).** Razlika aktivan − neaktivan je između −2,4 i +1,4 ms, s oba predznaka (na teststore1
+**Zaključak (H0.57).** Razlika aktivan − neaktivan je između −2,4 i +1,4 ms, s oba predznaka (na testnoj trgovini A
 je u šest od devet redaka aktivan plugin „brži”). Razlika među mjerenjima istog stanja je veća (do 11 ms na
 staroj stranici). Dosljedne razlike iznad šuma nema; pomak od 2–4 ms iz prvog mjerenja bio je pomak
 opterećenja servera. Glavnu datoteku plugina zato ne treba mijenjati.
@@ -133,7 +133,7 @@ opterećenja servera. Glavnu datoteku plugina zato ne treba mijenjati.
 
 | Stranica | Stranice za kupce, aktivan | `GET /wc/v3/products`, aktivan | `GET /bulkbird/v1/info` |
 |---|---|---|---|
-| teststore1 | samo `bulkbird-helper.php` (+1) | samo `bulkbird-helper.php` (+1) | glavna + 3 |
+| testna trgovina A | samo `bulkbird-helper.php` (+1) | samo `bulkbird-helper.php` (+1) | glavna + 3 |
 | stara stranica | samo `bulkbird-helper.php` (+1) | samo `bulkbird-helper.php` (+1) | glavna + 3 |
 
 Time je `0.1.0-rc.2` potvrđen i na staroj stranici (H0.59): tuđi REST zahtjev učitava samo glavnu datoteku.
@@ -146,7 +146,7 @@ učitava) i kad je aktivan:
 
 - stara stranica: proizvod 139 upita u mirnom stanju; 147 u parovima 1 i 3 (i neaktivan i aktivan), 139 u
   paru 2 (i neaktivan i aktivan); isti obrazac na naslovnici (136 / 144) i `wc/v3/products` (83 / 91);
-- teststore1: proizvod 51 upit u mirnom stanju i u svim koracima „aktivan”, 59 u svim koracima „neaktivan”;
+- testna trgovina A: proizvod 51 upit u mirnom stanju i u svim koracima „aktivan”, 59 u svim koracima „neaktivan”;
   naslovnica 54 u mirnom stanju, 61–62 u svim koracima izmjeničnog mjerenja (i neaktivan i aktivan).
 
 Unutar istog stanja broj upita je stalan, a razlika ne prati to je li naš plugin učitan, nego koliko je

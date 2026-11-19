@@ -7,3 +7,4 @@
 /.phpstan-cache/
 /.phpbin/
 __pycache__/
+/CLAUDE.local.md

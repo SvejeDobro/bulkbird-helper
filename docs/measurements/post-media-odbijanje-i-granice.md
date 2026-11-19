@@ -1,6 +1,6 @@
 # `POST /media`: kad stiže odbijanje i koja je stvarna granica veličine
 
-15. 11. 2026. · teststore1.bulkbird.app · plugin `0.2.0` · pitanja Bulkbird strane za paket 2b (slike).
+15. 11. 2026. · testna trgovina A · plugin `0.2.0` · pitanja Bulkbird strane za paket 2b (slike).
 Ugovor (`docs/api-v1.md`) nije mijenjan. Na trgovini nije ništa mijenjano; poslano je 12 malih zahtjeva
 (najviše 300 kB), svi odbijeni, bez ijedne spremljene slike. Prevelike datoteke nisu slane.
 
@@ -67,7 +67,7 @@ Ovo nije mjereno slanjem (bilo bi potrebno 31 prijenos); slijedi iz koda (`rest_
 `permission_callback` ne odgovara prije kraja prijenosa. Odgovor 429 na 31. prijenos pokrivaju testovi
 stvarnim HTTP-om (H2.53).
 
-## 3. Stvarna granica veličine na teststore1 (prema konfiguraciji, ne slanjem)
+## 3. Stvarna granica veličine na testnoj trgovini A (prema konfiguraciji, ne slanjem)
 
 | Sloj | Granica | Izvor | Što klijent dobije iznad granice |
 |---|---|---|---|
@@ -94,7 +94,7 @@ Pri čitanju zapisa nginxa za točku 3 pokazalo se:
   (to vrijedi za sve klijente, i za Bulkbird program). Secret se pritom ne bilježi.
 - Kad se ključ pošalje **u adresi** (`?consumer_key=…&consumer_secret=…`), u `access.log` ulazi i **secret**.
   To rade dva testa stvarnim HTTP-om (H0.3 i jedan u poglavlju `/media`), pa je secret testnog ključa samo
-  za čitanje u zapisu nginxa: 9 redaka na teststore1 i 13 na teststoreold.
+  za čitanje u zapisu nginxa: 9 redaka na testnoj trgovini A i 13 na testnoj trgovini B.
 - Preporuka za Bulkbird stranu (ugovor to već dopušta): ključ slati samo u zaglavlju, nikad u adresi.
 
 Vrijednosti ključeva nisu zapisane u ovaj dokument.

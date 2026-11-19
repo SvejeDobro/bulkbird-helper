@@ -25,8 +25,8 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 	};
 
 	$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
-	if ( ! in_array( $host, array( 'teststore1.bulkbird.app', 'teststoreold.bulkbird.app' ), true ) ) {
-		$fail( 'ova skripta radi samo na testnim stranicama.' );
+	if ( ! in_array( $host, array_filter( array_map( 'trim', explode( ',', (string) getenv( 'BBH_TEST_HOSTS' ) ) ) ), true ) ) {
+		$fail( 'ova skripta radi samo na testnim stranicama iz BBH_TEST_HOSTS (vidi sites.env.example).' );
 	}
 	if ( ! function_exists( 'wc_rand_hash' ) || ! function_exists( 'wc_api_hash' ) ) {
 		$fail( 'WooCommerce nije učitan.' );

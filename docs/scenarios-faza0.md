@@ -16,7 +16,7 @@ upisane odluke P1–P13 i odluka o staroj okolini. Brojevi postojećih scenarija
 
 Oznake okolina:
 
-- **NOVA** — teststore1.bulkbird.app (WP 7.1, WC 11.3, PHP 8.3), stvarni HTTP kroz Cloudflare i nginx.
+- **NOVA** — testna trgovina A (WP 7.1, WC 11.3, PHP 8.3), stvarni HTTP kroz Cloudflare i nginx.
 - **STARA** — WP 6.4, WC 8.0, PHP 8.1 (gdje stoji: vidi poglavlje 10).
 - **CI** — automatski pri svakom pushu.
 
@@ -70,7 +70,7 @@ Svaki scenarij se izvodi stvarnim HTTP zahtjevom na NOVA i STARA.
 | H0.20 | Zapis u debug log tijekom H0.1–H0.19 | plugin u `wp-debug.log` ne upisuje ništa (ni ključeve, ni sadržaj zahtjeva, ni PHP obavijesti) |
 | H0.91 | **Bulkbirdov stvarni slučaj:** K-READ korisnika s ulogom Shop manager (ima `manage_woocommerce`, nema `manage_options`), `GET /info` | 200 s potpunim odgovorom (sva polja iz H0.21); test potvrđuje i da korisnik doista nije administrator |
 
-Napomene uz autentikaciju (nalazi s teststore1, WC 11.3):
+Napomene uz autentikaciju (nalazi s testne trgovine A, WC 11.3):
 
 - WooCommerce nepoznat consumer key ne javlja kao grešku — zahtjev nastavlja kao neprijavljen. Zato H0.6
   završava u provjeri sposobnosti plugina, koja mora vratiti 401.
@@ -88,7 +88,7 @@ Napomene uz autentikaciju (nalazi s teststore1, WC 11.3):
 | H0.22 | Vrste podataka | verzije su tekst; `api_version`, `max_upload_bytes`, `max_execution_time` cijeli brojevi; `hpos_enabled` logička vrijednost; `features` i `detected_plugins` popisi |
 | H0.23 | `plugin_version` | jednaka verziji u zaglavlju plugina i git oznaci s koje je postavljen |
 | H0.24 | `features` u verziji 0.1.0 | prazan popis `[]` (media, changes, sales još ne postoje); svaka faza dodaje svoju oznaku (odluka P2) |
-| H0.25 | Vrijednosti na NOVA | `hpos_enabled: true`, verzije 7.1.x / 11.3.x / 8.3.x, valuta i zona jednake postavkama trgovine (uspoređuje se s `wp83 option get`) |
+| H0.25 | Vrijednosti na NOVA | `hpos_enabled: true`, verzije 7.1.x / 11.3.x / 8.3.x, valuta i zona jednake postavkama trgovine (uspoređuje se s `wp option get`) |
 | H0.26 | Vrijednosti na STARA | verzije 6.4.x / 8.0.x / 8.1.x; `hpos_enabled` prema postavci te trgovine |
 | H0.27 | `detected_plugins` | samo slug i verzija, i samo s popisa pluginova važnih Bulkbirdu (page builderi, SEO, WPML/Polylang, cache, Omnibus); na NOVA prazan popis jer nijedan nije instaliran; ostali pluginovi trgovine se ne navode |
 | H0.28 | `analytics_lookup` | `complete` ili `importing`; na NOVA `complete` |
@@ -107,7 +107,7 @@ brisanje, pa se na NOVA izvodi samo uz izričito odobrenje; inače na STARA / CI
 
 | ID | Scenarij | Očekivano |
 |---|---|---|
-| H0.36 | Aktivacija (`wp83 plugin activate bulkbird-helper`) na ispravnoj okolini | uspjeh; bez PHP obavijesti u `wp-debug.log`; bez admin obavijesti; bez nove stranice ili izbornika |
+| H0.36 | Aktivacija (`wp plugin activate bulkbird-helper`) na ispravnoj okolini | uspjeh; bez PHP obavijesti u `wp-debug.log`; bez admin obavijesti; bez nove stranice ili izbornika |
 | H0.37 | Stanje nakon aktivacije | u fazi 0: nijedna nova tablica, nijedan cron posao; najviše jedna vlastita opcija (verzija sheme) s `autoload = no` |
 | H0.38 | Popis pluginova | redak s nazivom, verzijom, opisom; samo poveznice Aktiviraj / Deaktiviraj (bez „Postavke”) |
 | H0.39 | Deklaracija HPOS-a | WooCommerce → Status ne prikazuje Helper kao nekompatibilan s HPOS-om |
@@ -123,7 +123,7 @@ brisanje, pa se na NOVA izvodi samo uz izričito odobrenje; inače na STARA / CI
 
 ## 4. Multisite
 
-Izvodi se u CI-ju (WordPress testna okolina u multisite načinu); teststore1 se ne pretvara u multisite.
+Izvodi se u CI-ju (WordPress testna okolina u multisite načinu); testna trgovina A se ne pretvara u multisite.
 
 | ID | Scenarij | Očekivano |
 |---|---|---|
@@ -155,7 +155,7 @@ Način brojanja (odluka P6): mali mjerni mu-plugin iz repozitorija (`tests/tools
 | H0.59 | Admin i REST zahtjevi izvan `bulkbird/` (npr. `GET /wc/v3/products`) | 0 dodatnih upita |
 | H0.60 | Izvještaj | `docs/measurements/faza0.md` s tablicom prije / poslije, datumom, verzijama i načinom mjerenja |
 
-## 6. Postavljanje na teststore1 iz git oznake
+## 6. Postavljanje na testnu trgovinu A iz git oznake
 
 | ID | Scenarij | Očekivano |
 |---|---|---|
@@ -163,7 +163,7 @@ Način brojanja (odluka P6): mali mjerni mu-plugin iz repozitorija (`tests/tools
 | H0.62 | Ponovljena izrada iz iste oznake | isti SHA-256 (ponovljiva izrada) |
 | H0.63 | Pokušaj postavljanja s grane ili iz radne kopije s izmjenama | skripta odbija; postavlja se samo točna oznaka |
 | H0.64 | Oznaka i verzija u zaglavlju plugina se razlikuju | skripta odbija |
-| H0.65 | Prvo postavljanje | datoteke u `wp-content/plugins/bulkbird-helper`, vlasnik i dozvole kao ostali pluginovi; aktivacija kroz `wp83` uz odobrenje |
+| H0.65 | Prvo postavljanje | datoteke u `wp-content/plugins/bulkbird-helper`, vlasnik i dozvole kao ostali pluginovi; aktivacija kroz WP-CLI uz odobrenje |
 | H0.66 | Provjera nakon postavljanja | `GET /info` vraća `plugin_version` jednak oznaci; `wp-debug.log` bez novih redaka plugina; naslovnica 200 |
 | H0.67 | Nadogradnja na novu oznaku | prethodna verzija se **premješta** u `~/backups/plugin-releases/bulkbird-helper-<verzija>-<vrijeme>/` (ne briše se), zatim se raspakira nova (odluka P8) |
 | H0.68 | Povratak na prethodnu oznaku | isti postupak s ranijom oznakom; `GET /info` to potvrđuje |
@@ -214,21 +214,21 @@ Svaki kvar je mala izmjena (`tests/faults/*.patch`); skripta ih primjenjuje jedn
 | Standard koda i sigurnosna pravila | PHPCS + WPCS 3 + PHPCompatibilityWP |
 | Provjera „nula frontenda”, dozvola, tajni, paketa | male skripte u `bin/` (pokreće ih `composer check` i CI) |
 | Namjerni kvarovi | `bin/run-faults.sh` nad `tests/faults/*.patch` |
-| Aktivacija, deinstalacija, postavljanje | WP-CLI kroz `~/bin/wp83`; skripta `bin/deploy.sh` |
+| Aktivacija, deinstalacija, postavljanje | WP-CLI kroz omotač WP-CLI-ja stranice; skripta `bin/deploy.sh` |
 | CI | GitHub Actions (PHP 8.1–8.4, MySQL servis) |
 
-Razvojni alati se instaliraju Composerom samo u `~/src/bulkbird-helper/vendor` (izvan web mape, ne ulaze
+Razvojni alati se instaliraju Composerom samo u `vendor/` radne kopije (izvan web mape, ne ulaze
 u paket). Na server se ne instalira ništa sustavski.
 
 ## 10. Stara okolina (WP 6.4 / WC 8.0 / PHP 8.1)
 
-**Odluka vlasnika: A + B.** Stranicu `teststore-old.bulkbird.app` (PHP 8.1) u CloudPanelu stvara vlasnik
+**Odluka vlasnika: A + B.** Stranicu za stariju okolinu (PHP 8.1) u CloudPanelu stvara vlasnik
 kad krene razvoj; CC mu tada daje popis što treba.
 
 | Mogućnost | Ocjena |
 |---|---|
 | A. CI matrica na GitHub Actions | automatski pri svakom pushu, ne dira server; pokriva integracijske testove i multisite, ali ne stvarni nginx / Cloudflare |
-| B. Druga CloudPanel stranica na ovom serveru (npr. `teststore-old.bulkbird.app`, PHP 8.1, WP 6.4.x, WC 8.0.x, mala demo trgovina) | jedina daje stvarne HTTP testove autentikacije na staroj verziji; mora je stvoriti vlasnik u CloudPanelu (ovaj korisnik nema ta prava) |
+| B. Druga CloudPanel stranica na ovom serveru (npr. za stariju okolinu, PHP 8.1, WP 6.4.x, WC 8.0.x, mala demo trgovina) | jedina daje stvarne HTTP testove autentikacije na staroj verziji; mora je stvoriti vlasnik u CloudPanelu (ovaj korisnik nema ta prava) |
 | C. Kontejner na serveru | nije izvedivo: nema Dockera ni sudo prava |
 
 A odmah, za svaki commit. B za scenarije poglavlja 1 i 6 na staroj verziji, jer se autentikacija

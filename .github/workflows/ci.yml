@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'paket-*']
+    branches: [main, 'paket-*', 'ciscenje-*']
     tags: ['v*']
   pull_request:
 

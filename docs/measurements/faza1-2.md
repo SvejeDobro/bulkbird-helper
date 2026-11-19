@@ -9,12 +9,12 @@ Biblioteka na obje stranice: 716 slika.
 
 | Zahtjev | Stranica | Upiti | PHP ms (medijan) | Kroz Cloudflare (medijan, samo zapis) |
 |---|---|---|---|---|
-| `GET /media?per_page=100` | teststore1 (WP 7.1.4, WC 11.3.0, PHP 8.3) | 51 | **116** | 184 ms |
-| `GET /media?per_page=100&search=a` | teststore1 | 51 | **122** | 186 ms |
-| `GET /info` | teststore1 | 51 | 98 | 160 ms |
-| `GET /media?per_page=100` | teststoreold (WP 6.4.14, WC 8.0.3, PHP 8.1) | 73 | **143** | 200 ms |
-| `GET /media?per_page=100&search=a` | teststoreold | 73 | **149** | 213 ms |
-| `GET /info` | teststoreold | 73 | 126 | 194 ms |
+| `GET /media?per_page=100` | testna trgovina A (WP 7.1.4, WC 11.3.0, PHP 8.3) | 51 | **116** | 184 ms |
+| `GET /media?per_page=100&search=a` | testna trgovina A | 51 | **122** | 186 ms |
+| `GET /info` | testna trgovina A | 51 | 98 | 160 ms |
+| `GET /media?per_page=100` | testna trgovina B (WP 6.4.14, WC 8.0.3, PHP 8.1) | 73 | **143** | 200 ms |
+| `GET /media?per_page=100&search=a` | testna trgovina B | 73 | **149** | 213 ms |
+| `GET /info` | testna trgovina B | 73 | 126 | 194 ms |
 
 - Oba cilja su ispunjena na obje stranice. Najveća stranica popisa (100 stavki) stoji oko 18 ms više od `/info`.
 - Broj upita je jednak za `/info` i za `/media` sa 100 stavki: popis ne radi upit po stavci (H1.43).
@@ -29,7 +29,7 @@ Biblioteka na obje stranice: 716 slika.
 Plugin je aktivan cijelo vrijeme (nije deaktiviran za ovo mjerenje), pa je usporedba s brojkama
 „plugin aktivan” i „bez plugina” iz faze 0 (`faza0.md`), izmjerenima istim alatom na istim stranicama.
 
-| Stranica | Tko | teststore1: upiti 0.2.0 (faza 0 bez plugina) | datoteke plugina | PHP ms | teststoreold: upiti 0.2.0 (faza 0 bez plugina) | datoteke plugina | PHP ms |
+| Stranica | Tko | testna trgovina A: upiti 0.2.0 (faza 0 bez plugina) | datoteke plugina | PHP ms | testna trgovina B: upiti 0.2.0 (faza 0 bez plugina) | datoteke plugina | PHP ms |
 |---|---|---|---|---|---|---|---|
 | Naslovnica | neprijavljen | 54 (54) | samo glavna | 116,1 | 136 (136) | samo glavna | 134,6 |
 | Naslovnica | Shop manager | 80, jednom 85 (80) | samo glavna | 144,4 | 142–151 | samo glavna | 139,0 |
@@ -46,7 +46,7 @@ Plugin je aktivan cijelo vrijeme (nije deaktiviran za ovo mjerenje), pa je uspor
   prije aktivacije plugina.
 - **Samo glavna datoteka:** na stranicama za kupce i na tuđem REST zahtjevu učitava se jedino
   `bulkbird-helper.php`; ukupan broj PHP datoteka jednak je onome iz faze 0 s aktivnim pluginom
-  (npr. 1476, 1505, 1449 na teststore1; 1237, 1229 na teststoreold). Klase za `/media` i brojač učestalosti
+  (npr. 1476, 1505, 1449 na testnoj trgovini A; 1237, 1229 na testnoj trgovini B). Klase za `/media` i brojač učestalosti
   se učitavaju samo na zahtjevima prema `bulkbird/v1`.
 - **Brojač učestalosti se ne upisuje izvan putanja plugina:** tuđi REST zahtjev ima isti broj upita kao bez plugina.
 - Stara stranica u fazi 0 nije mjerena s kolačićem Shop managera, pa za te retke nema usporedbe; i ondje se

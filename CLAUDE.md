@@ -4,7 +4,15 @@ Repozitorij WordPress plugina **Bulkbird Helper** (`SvejeDobro/bulkbird-helper`)
 Jedini izvor zahtjeva: `docs/spec-v1.md`. Ugovor API-ja: `docs/api-v1.md` (nastaje u fazi 0).
 Ovaj CC je zadužen za stranu plugina. Bulkbird program (Windows) radi drugi CC i ovaj repozitorij ne mijenja.
 
-## Pravila servera (vrijede uvijek; izvor: `~/NOTES-bulkbird.md`)
+**Lokalni dio: `CLAUDE.local.md`.** Repozitorij je javan, pa ovdje nema ničega specifičnog za server: adrese
+testnih trgovina, korisnici sustava, putanje, SSH aliasi, putanje do tokena i ključeva te sastav servera su u
+`CLAUDE.local.md` u korijenu radne kopije (u `.gitignore`). **Na početku rada ga pročitaj** (Claude Code ga učitava
+sam samo kad je sesija pokrenuta u mapi repozitorija). Ako ga nema, stani i pitaj vlasnika. Ništa iz njega ne smije
+u commit, dokumente, primjere odgovora ni poruke commita; u repozitoriju se trgovine zovu „testna trgovina A”
+(najnovije verzije, cilj `NEW`) i „testna trgovina B” (najniže podržane verzije, cilj `OLD`).
+Skripte i testovi čitaju opis stranica iz okoline ili iz `sites.env` izvan repozitorija (vidi `sites.env.example`).
+
+## Pravila servera (vrijede uvijek; izvor: lokalne bilješke vlasnika, vidi `CLAUDE.local.md`)
 
 1. **Tajne nikad u razgovor ni u datoteku.** Lozinke, salt i ključevi iz `wp-config.php`, WooCommerce
    consumer key/secret, tokeni, privatni SSH ključ — ne ispisuju se i ne zapisuju. U repozitorij ne smije
@@ -12,13 +20,13 @@ Ovaj CC je zadužen za stranu plugina. Bulkbird program (Windows) radi drugi CC 
 2. **Osobni podaci kupaca se ne ispisuju — ni lažni/demo.** Iz baze samo brojevi i agregati.
    Primjeri odgovora (`fixtures/`) ne smiju sadržavati imena, e-mailove, adrese, ID-eve narudžbi.
 3. **Brisanje samo uz izričito odobrenje vlasnika** (datoteke, tablice, retci, pluginovi, kopije, logovi).
-4. **Polazna kopija se vraća samo na izričit zahtjev vlasnika** (`~/bin/restore-baseline.sh`).
-5. **WP-CLI samo kroz `~/bin/wp83`** (PHP 8.3, isti kao web). Goli `wp` koristi PHP 8.4 — ne koristiti.
+4. **Polazna kopija se vraća samo na izričit zahtjev vlasnika.**
+5. **WP-CLI samo kroz omotač stranice** (isti PHP kao web; naveden u `CLAUDE.local.md`). Goli `wp` ne koristiti.
 6. Bez odobrenja se ne mijenjaju pluginovi, tema, postavke WooCommercea ni podaci trgovine;
    ništa se ne instalira na server i ne restarta.
 
 Iznimka od pravila 1 (odluka vlasnika P11, 14. 11. 2026.): ključevi **testnih** korisnika demo trgovina
-smiju biti u `~/.config/bulkbird-helper/test.env` (dozvole 600, izvan repozitorija i web mape). Datoteku
+smiju biti u datoteci `test.env` (dozvole 600, izvan repozitorija i web mape). Datoteku
 ispunjava skripta bez ispisa ili vlasnik. Nikad ključ stvarnog korisnika ili produkcije. Ako ključ
 dospije u log, razgovor ili repozitorij: odmah ga opozvati, stvoriti novi i javiti vlasniku.
 
@@ -33,7 +41,7 @@ K_RW su zbog toga zamijenjeni na obje stranice.
 Jedino brisanje koje testovi smiju raditi bez posebnog pitanja:
 
 - samo privitci kojima **naslov počinje s `bbh-test-`** I koji imaju meta **`_bulkbird_upload_id`** (oba uvjeta);
-- samo na **teststore1** i **teststoreold**;
+- samo na **testnim trgovinama A i B** (alati odbijaju host koji nije u `BBH_TEST_HOSTS`);
 - samo kroz **WP-CLI** (`tests/tools/cleanup-test-media.php`);
 - **prije brisanja ispisati broj i ID-jeve**.
 
@@ -44,26 +52,26 @@ testovi plugina: naziv počinje s `bbh-test-`, uz ispis ID-ja; skripta `tests/to
 
 **Brisanje testnih podataka uvijek s ispisom ID-ja** (pravilo vlasnika, 18. 11. 2026.) — i kad test ili alat na
 početku čisti ostatke prekinutog pokretanja. Nijedan poziv skripti `cleanup-test-*` ne smije odbaciti njihov
-ispis. Primjer greške: 18. 11. 2026. je `GAttributeTermsE2ETest` ostatke prekinutog pokretanja na teststore1
+ispis. Primjer greške: 18. 11. 2026. je `GAttributeTermsE2ETest` ostatke prekinutog pokretanja na testnoj trgovini A
 obrisao bez ispisa ID-ja.
 
 Ništa drugo se ne briše bez izričitog odobrenja: ni drugi privitci, ni drugi proizvodi, ni narudžbe, ni datoteke.
-**Proizvodi `bbf-` (teststore1, ID 16942–16945) se nikad ne brišu**; `bbt-` su Bulkbirdovi i nisu moji.
+**Trajni podaci `bbf-` se nikad ne brišu** (popis u `CLAUDE.local.md`); `bbt-` su Bulkbirdovi i nisu moji.
 
 ## CI (GitHub Actions)
 
-- CI pratim sam: nakon svakog pusha `~/bin/ci-status --wait <commit|oznaka|grana>` i rezultat u izvještaj.
+- CI pratim sam: nakon svakog pusha `ci-status --wait <commit|oznaka|grana>` (lokalna skripta, vidi `CLAUDE.local.md`) i rezultat u izvještaj.
   Pali posao: popraviti, pushati, pričekati; ako je uzrok u pluginu (ne u testu ili pripremi), opisati ga.
-- Token je u `~/.config/bulkbird-helper/github-ci-token` (600): fine-grained, samo ovaj repozitorij,
+- Token za čitanje stanja CI-ja je u datoteci izvan repozitorija (600): fine-grained, samo ovaj repozitorij,
   **samo čitanje Actionsa** (i Metadata). Nikad se ne ispisuje, ne zapisuje u log, repozitorij ni bilješke
   i ne stavlja u argumente naredbi; čita se iz datoteke u zaglavlje zahtjeva.
-- **Token istječe u utorak 16. 11. 2027.** Kad istekne ili prestane raditi (`ci-status` izlazi s 4),
+- Kad token istekne (datum u `CLAUDE.local.md`) ili prestane raditi (`ci-status` izlazi s 4),
   javiti vlasniku da napravi novi.
 - Ako poslovi nisu pokrenuti zbog potrošenih minuta ili limita potrošnje, javiti vlasniku odmah.
-- CI se pokreće na `main`, na granama `paket-*` i na oznakama `v*`.
+- CI se pokreće na `main`, na granama `paket-*` i `ciscenje-*` i na oznakama `v*`.
 - **Postavljanje na stranice tek nakon zelenog CI-ja za samu oznaku** (pravilo vlasnika, 18. 11. 2026.): vrijedi
   samo pokretanje kojem je ref oznaka (redak `push v…`), ne zeleno pokretanje istog commita na `main`.
-  `~/bin/ci-status --wait v1.2.3` zato za oznaku čeka upravo to pokretanje; ako ga nema, izlazi s 3. Prije
+  `ci-status --wait v1.2.3` zato za oznaku čeka upravo to pokretanje; ako ga nema, izlazi s 3. Prije
   `bin/deploy.sh` provjeriti da je u ispisu redak `push v…` sa `SUCCESS`.
   Primjer greške: `v0.5.0` je postavljen nakon zelenog #46 (`push main`, isti commit), prije nego što se
   pojavilo pokretanje oznake #47 (naknadno zeleno).
@@ -93,21 +101,14 @@ uz odobrenje vlasnika.
   nepromijenjeni od `0.5.0`. `bin/build-zip.sh` od 0.5.1 pada ako paket nema `license.txt`. Nakon toga plugin miruje.
 - Dopuna trajnog odobrenja za brisanje (vlasnik, 18. 11. 2026.): i testni **globalni atributi** `bbh-test-` s
   vrijednostima, uz ispis ID-ja; skripta `tests/tools/cleanup-test-attributes.php`.
-- teststore1 ima Elementor i Beaver Builder Lite i trajne proizvode `bbf-`; vidi `~/NOTES-bulkbird.md`.
 
 Aktivaciju plugina i mjerni mu-plugin treba tražiti od vlasnika posebno, svaki put i za svaku stranicu.
 
 ## Gdje je što
 
-| Što | Putanja |
-|---|---|
-| Radna kopija repozitorija | `~/src/bulkbird-helper` (izvan web mape) |
-| Demo trgovina | `~/htdocs/teststore1.bulkbird.app` — `https://teststore1.bulkbird.app` |
-| Plugin na trgovini | `wp-content/plugins/bulkbird-helper` — **samo iz git oznake**, nikad uređivati na mjestu |
-| Polazna kopija trgovine | `~/backups/baseline-20261114/` |
-| WordPress debug log | `~/logs/wp/wp-debug.log` (od 16. 11. 2026.; u podmapi da ga CloudPanelovo pravilo rotira) |
-| PHP / nginx logovi | `~/logs/php/error.log`, `~/logs/nginx/` (access log sadrži IP adrese — ne ispisivati) |
-| Git udaljeni repozitorij | `git@github-bulkbird-helper:SvejeDobro/bulkbird-helper.git` (deploy ključ, alias u `~/.ssh/config`) |
+Plugin na trgovini je u `wp-content/plugins/bulkbird-helper` — **samo iz git oznake** (`bin/deploy.sh`), nikad
+uređivati na mjestu. Radna kopija je izvan web mape. Sve ostale putanje (logovi, kopije, paketi, udaljeni
+repozitorij) su u `CLAUDE.local.md`.
 
 ## Način rada
 
@@ -139,7 +140,7 @@ prošli tek naknadno.
   ostaje u zapisu nginxa zajedno sa secretom (dogodilo se 15. 11. 2026. s testnim ključem K_READ).
 - To čuvaju: `TestHygieneTest` (pada ako ijedan test ili alat sastavlja adresu s ključem), provjera u
   `E2ECase` (takav zahtjev se ne šalje) i `ZLogE2ETest` (secret nijednog testnog ključa nije u zapisu nginxa).
-- Zapise nginxa vodi CloudPanel; ne diraju se.
+- Zapise web servera vodi upravljačka ploča poslužitelja; ne diraju se.
 - Zamjena testnih ključeva: `tests/tools/rotate-test-keys.py <new|old> K_READ,K_RW` (secret se ne ispisuje).
 - Scenariji H0.3 i dio H1.8 (ključ u adresi) se zato stvarnim HTTP-om više ne izvode.
 
@@ -180,18 +181,15 @@ prošli tek naknadno.
 - Naslovnica i stranica proizvoda za kupca: 0 dodatnih upita i 0 dodatnih učitanih datoteka
   (mjeri se prije i poslije aktivacije).
 - Spremanje proizvoda: najviše 1 dodatni INSERT po događaju.
-- `GET /changes` (500 stavki) i `GET /sales` (12 mjeseci) na teststore1: izmjeriti i zapisati; cilj < 500 ms.
+- `GET /changes` (500 stavki) i `GET /sales` (12 mjeseci) na testnoj trgovini A: izmjeriti i zapisati; cilj < 500 ms.
 - CI pada ako se u kodu pojavi `wp_enqueue_script`, `wp_enqueue_style` ili kuka na frontend
   (`wp_head`, `wp_footer`, `template_redirect`, `init` s upitom prema bazi).
 
-## Poznate činjenice o okruženju (provjereno 14. 11. 2026.)
+## Poznate činjenice o WooCommerceu (provjereno 14. 11. 2026.)
 
-- teststore1: WordPress 7.1.4, WooCommerce 11.3.0, PHP-FPM 8.3, Percona 8.4, nginx, Cloudflare ispred.
-  HPOS uključen. Izravan pristup originu mimo Cloudflarea vraća 403.
 - WooCommerce 11.1+ odbija REST ključ na putanjama izvan `wc/` i `wc-` (`reject_out_of_scope_route`),
   osim kad adresa zahtjeva imenuje istu putanju koju WordPress i izvršava. Filter
   `woocommerce_rest_is_request_to_rest_api` zato mora strogo provjeriti prefiks `bulkbird/`, a
   ponašanje se testira i na WC 8.0 i na WC 11.3.
 - Nepoznat consumer key WooCommerce ne javlja kao grešku: zahtjev se nastavlja kao neprijavljen.
-- Varnish je za stranicu isključen; ako se uključi, VCL ne zaobilazi `/wp-json/` ni `Authorization: Basic`.
-- Na serveru nema Dockera ni sudo prava; postoje PHP 8.1–8.5 CLI, Composer, Node, git.
+- Sastav servera i testnih trgovina (verzije, posrednici, ograničenja) je u `CLAUDE.local.md`.

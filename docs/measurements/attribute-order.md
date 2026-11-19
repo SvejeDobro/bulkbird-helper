@@ -1,6 +1,6 @@
 # Poredak vrijednosti globalnih atributa (`pa_*`)
 
-18. 11. 2026. · za Bulkbird paket 3c · teststore1 (WordPress 7.1.4, WooCommerce 11.3.0) i teststoreold
+18. 11. 2026. · za Bulkbird paket 3c · testna trgovina A (WordPress 7.1.4, WooCommerce 11.3.0) i testna trgovina B
 (WordPress 6.4.14, WooCommerce 8.0.3); obje MySQL 8.4.11 (Percona), tema Storefront 4.6.2.
 Alati: `tests/tools/probe-attribute-order.php` (stvara atribut, vrijednosti i skicu proizvoda kroz WooCommerce
 REST ključem Shop managera; mijenja postavku atributa; čita ključem samo za čitanje) i
@@ -144,12 +144,12 @@ odgovora, pa postojeći klijenti ostaju ispravni.
 Ispis skripte `tests/tools/cleanup-test-attributes.php`:
 
 ```
-[teststore1.bulkbird.app] testnih skica proizvoda za brisanje: 1; ID: 17068
-[teststore1.bulkbird.app] testni atribut za brisanje: ID 1 (pa_bbh-test-atribut); vrijednosti: 8; ID: 228, 229, 230, 231, 232, 233, 234, 235
-[teststore1.bulkbird.app] obrisano: skica 1, vrijednosti 8, atributa 1; nije uspjelo: 0
-[teststoreold.bulkbird.app] testnih skica proizvoda za brisanje: 1; ID: 5033
-[teststoreold.bulkbird.app] testni atribut za brisanje: ID 1 (pa_bbh-test-atribut); vrijednosti: 8; ID: 177, 178, 179, 180, 181, 182, 183, 184
-[teststoreold.bulkbird.app] obrisano: skica 1, vrijednosti 8, atributa 1; nije uspjelo: 0
+[testna trgovina A] testnih skica proizvoda za brisanje: 1; ID: 17068
+[testna trgovina A] testni atribut za brisanje: ID 1 (pa_bbh-test-atribut); vrijednosti: 8; ID: 228, 229, 230, 231, 232, 233, 234, 235
+[testna trgovina A] obrisano: skica 1, vrijednosti 8, atributa 1; nije uspjelo: 0
+[testna trgovina B] testnih skica proizvoda za brisanje: 1; ID: 5033
+[testna trgovina B] testni atribut za brisanje: ID 1 (pa_bbh-test-atribut); vrijednosti: 8; ID: 177, 178, 179, 180, 181, 182, 183, 184
+[testna trgovina B] obrisano: skica 1, vrijednosti 8, atributa 1; nije uspjelo: 0
 ```
 
 Nakon brisanja na obje trgovine: 0 globalnih atributa, 0 pojmova `pa_…`, 0 pojmova i 0 proizvoda `bbh-test-`,

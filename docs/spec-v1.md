@@ -22,7 +22,7 @@ Načela (čvrsta, za sve verzije):
 | Stavka | Vrijednost |
 |---|---|
 | Najniže verzije | WordPress 6.4, WooCommerce 8.0, PHP 8.1 |
-| Testira se na | teststore1.bulkbird.app (najnovije: WP 7.1, WC 11.3, PHP 8.3) + jedna stara okolina (WP 6.4, WC 8.0, PHP 8.1) |
+| Testira se na | testna trgovina A (najnovije: WP 7.1, WC 11.3, PHP 8.3) + jedna stara okolina (WP 6.4, WC 8.0, PHP 8.1) |
 | Multisite | v1 ne podržava; aktivacija na mreži odbija se s porukom |
 | HPOS | deklarirana kompatibilnost (`custom_order_tables`) |
 | Slug / mapa | `bulkbird-helper` |
@@ -34,7 +34,7 @@ Načela (čvrsta, za sve verzije):
 
 **Autentikacija:** WooCommerce autentificira REST ključem samo svoje putanje. Plugin filterom `woocommerce_rest_is_request_to_rest_api` uključuje i `/wp-json/bulkbird/`. Time vrijede i provjera dozvole ključa po HTTP metodi (GET = read, POST = write) i ograničenja WooCommercea. Prijava kolačićem (WP admin u pregledniku) radi uz nonce kao i za ostali WordPress REST.
 
-> **Napomena — za provjeru u fazi 0** (nalaz iz koda WooCommercea 11.3.0 na teststore1, 14. 11. 2026.; dodao CC na serveru):
+> **Napomena — za provjeru u fazi 0** (nalaz iz koda WooCommercea 11.3.0 na testnoj trgovini A, 14. 11. 2026.; dodao CC na serveru):
 >
 > 1. **Opseg REST ključa u WooCommerceu 11.1+.** WooCommerce od verzije 11.1 ima dodatnu provjeru
 >    (`reject_out_of_scope_route`) koja odbija REST ključ na putanjama izvan `wc/` i `wc-` (401,
@@ -119,7 +119,7 @@ Stavka: `product_id`, `variation_id`, `qty`, `net_revenue`, `refund_qty`, `refun
 
 Izvor: WooCommerce Analytics lookup tablice (`wc_order_product_lookup`, `wc_order_stats`). Ako uvoz lookup tablica nije dovršen, greška `bulkbird_lookup_incomplete` (409), a Bulkbird koristi postojeći način. Rezultat se drži u cacheu 5 minuta po skupu parametara.
 
-**Prihvatni uvjet:** na teststore1 (2.000 narudžbi, 71 povrat, različiti statusi) rezultat mora biti jednak onome što Bulkbird danas izračuna iz narudžbi preko REST-a. Svaka razlika se objašnjava i odlučuje prije uključivanja.
+**Prihvatni uvjet:** na testnoj trgovini A (2.000 narudžbi, 71 povrat, različiti statusi) rezultat mora biti jednak onome što Bulkbird danas izračuna iz narudžbi preko REST-a. Svaka razlika se objašnjava i odlučuje prije uključivanja.
 
 ### 3.6 WooCommerce → Status
 
@@ -139,7 +139,7 @@ Odjeljak „Bulkbird Helper” u izvješću o stanju sustava: verzija plugina, `
 
 - Na stranici proizvoda i naslovnici za kupca: 0 dodatnih upita i 0 dodatnih učitanih datoteka (Query Monitor, prije i poslije aktivacije).
 - Spremanje proizvoda: najviše 1 dodatni INSERT po događaju.
-- `GET /changes` s 500 stavki i `GET /sales` za 12 mjeseci na teststore1: izmjeriti i zapisati vrijeme; cilj ispod 500 ms.
+- `GET /changes` s 500 stavki i `GET /sales` za 12 mjeseci na testnoj trgovini A: izmjeriti i zapisati vrijeme; cilj ispod 500 ms.
 - Automatska provjera u CI-ju: pada ako se u kodu pojavi `wp_enqueue_script`, `wp_enqueue_style` ili kuka na frontend (`wp_head`, `wp_footer`, `template_redirect`, `init` s upitom prema bazi).
 
 ## 6. Strana Bulkbirda (program)
@@ -151,11 +151,11 @@ Odjeljak „Bulkbird Helper” u izvješću o stanju sustava: verzija plugina, `
 - **Prijenos slika:** samo uz Helper i ključ s dozvolom write; kroz postojeći mehanizam slanja (dnevnik, oporavak, idempotentni `client_upload_id`).
 - **Sinkronizacija:** `GET /changes` za brzu sinkronizaciju i otkrivanje obrisanih; povremena puna sinkronizacija ostaje kao sigurnosna mreža. `cursor_expired` → puna sinkronizacija.
 - **Prodaja:** `GET /sales` kad je dostupan i lookup potpun; inače postojeći način.
-- **Neovisno o pluginu — cache:** Bulkbird na REST odgovorima pri sinkronizaciji provjerava znakove cachea (`Age` > 0, `X-Cache: HIT`, `cf-cache-status: HIT`, `X-Varnish` s dva ID-a) i upozorava korisnika jer podaci mogu biti zastarjeli. Test: na teststore1 privremeno uključiti Varnish (samo uz odobrenje, s povratkom na polaznu kopiju).
+- **Neovisno o pluginu — cache:** Bulkbird na REST odgovorima pri sinkronizaciji provjerava znakove cachea (`Age` > 0, `X-Cache: HIT`, `cf-cache-status: HIT`, `X-Varnish` s dva ID-a) i upozorava korisnika jer podaci mogu biti zastarjeli. Test: na testnoj trgovini A privremeno uključiti Varnish (samo uz odobrenje, s povratkom na polaznu kopiju).
 
 ## 7. Testiranje i isporuka plugina
 
-- **Integracijski testovi** kroz REST i WP-CLI (`wp83`) na teststore1, uz mogućnost vraćanja polazne kopije; za svaku putanju: uspjeh, krivi ključ, ključ samo za čitanje na POST, korisnik bez sposobnosti, krivi parametri, ograničenje učestalosti.
+- **Integracijski testovi** kroz REST i WP-CLI na testnoj trgovini A, uz mogućnost vraćanja polazne kopije; za svaku putanju: uspjeh, krivi ključ, ključ samo za čitanje na POST, korisnik bez sposobnosti, krivi parametri, ograničenje učestalosti.
 - **Stara okolina** (WP 6.4 / WC 8.0 / PHP 8.1): druga stranica na istom serveru ili kontejner; prijedlog i odobrenje prije izrade.
 - **Namjerni kvarovi** kao u Bulkbirdu (npr. putanja bez provjere sposobnosti, prijenos bez provjere vrste, dnevnik bez kuke za zalihu) moraju srušiti testove.
 - **Ugovor:** `docs/api-v1.md` u repozitoriju bulkbird-helper je jedini izvor istine. Testovi plugina proizvode primjere JSON odgovora (`fixtures/`), a Bulkbird ih kopira uz broj verzije i ima test koji provjerava da ih razumije. Promjena ugovora samo uz odobrenje vlasnika projekta.
@@ -167,7 +167,7 @@ Odjeljak „Bulkbird Helper” u izvješću o stanju sustava: verzija plugina, `
 | Tko | Što |
 |---|---|
 | Vlasnik projekta | stvara privatni repozitorij SvejeDobro/bulkbird-helper, dodaje deploy ključ servera, odobrava scenarije, ugovor i svaku fazu |
-| CC na serveru | repozitorij bulkbird-helper: kod plugina, testovi, `docs/api-v1.md`, primjeri odgovora, postavljanje na teststore1 |
+| CC na serveru | repozitorij bulkbird-helper: kod plugina, testovi, `docs/api-v1.md`, primjeri odgovora, postavljanje na testnu trgovinu A |
 | CC za Bulkbird | strana programa (poglavlje 6), scenariji i testovi u Bulkbird repozitoriju; plugin ne mijenja |
 
 ## 9. Faze
@@ -176,7 +176,7 @@ Svaka faza: scenariji → odobrenje → izvedba → testovi i namjerni kvarovi �
 
 | Faza | Plugin (server) | Bulkbird (Windows) |
 |---|---|---|
-| 0 | repozitorij, kostur, autentikacija, `GET /info`, PHPStan/PHPCS/CI, postavljanje na teststore1, mjerenje učinka prije/poslije | otkrivanje plugina, redak stanja u Postavkama trgovine, provjera cachea na REST odgovorima |
+| 0 | repozitorij, kostur, autentikacija, `GET /info`, PHPStan/PHPCS/CI, postavljanje na testnu trgovinu A, mjerenje učinka prije/poslije | otkrivanje plugina, redak stanja u Postavkama trgovine, provjera cachea na REST odgovorima |
 | 1 | `GET /media` | odabir slike (tri razine) i dodjela postojećih slika proizvodima i varijantama |
 | 2 | `POST /media` | prijenos slika uz idempotentnost i oporavak |
 | 3 | `GET /changes` | brza sinkronizacija i otkrivanje obrisanih |

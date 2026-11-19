@@ -2,7 +2,7 @@
 /**
  * Briše testne slike koje su ostavili testovi prijenosa. Trajno odobrenje vlasnika (odluka P17), usko:
  *   - samo privitci kojima naslov počinje s "bbh-test-" I koji imaju meta "_bulkbird_upload_id";
- *   - samo na teststore1.bulkbird.app i teststoreold.bulkbird.app;
+ *   - samo na testnim stranicama čiji je host u BBH_TEST_HOSTS (zarezom odvojeno; prazno = odbija);
  *   - samo kroz WP-CLI;
  *   - prije brisanja ispisuje broj i ID-jeve.
  * Ništa drugo ova skripta ne dira.
@@ -21,8 +21,8 @@ if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) ) {
 	global $wpdb;
 
 	$host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
-	if ( ! in_array( $host, array( 'teststore1.bulkbird.app', 'teststoreold.bulkbird.app' ), true ) ) {
-		fwrite( STDERR, "Ova skripta radi samo na testnim stranicama (ovo je $host).\n" );
+	if ( ! in_array( $host, array_filter( array_map( 'trim', explode( ',', (string) getenv( 'BBH_TEST_HOSTS' ) ) ) ), true ) ) {
+		fwrite( STDERR, "Ova skripta radi samo na testnim stranicama iz BBH_TEST_HOSTS (ovo je $host; vidi sites.env.example).\n" );
 		exit( 1 );
 	}
 
